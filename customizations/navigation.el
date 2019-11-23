@@ -125,6 +125,7 @@
 
 
 (use-package helm-gtags
+  :ensure t
   :config
   (setq helm-gtags-ignore-case t
         helm-gtags-auto-update t
@@ -133,12 +134,12 @@
         helm-gtags-prefix-key "\C-cg"
         helm-gtags-suggested-key-mapping t)
   :bind (:map helm-gtags-mode-map
-              ("C-c g a" . helm-gtags-tags-in-this-function)
-              ("C-j" . helm-gtags-select)
+              ("\C-c g a" . helm-gtags-tags-in-this-function)
+              ("\C-j" . helm-gtags-select)
               ("M-." . helm-gtags-dwim)
               ("M-," . helm-gtags-pop-stack)
-              ("C-c <" . helm-gtags-previous-history)
-              ("C-c >" . helm-gtags-next-history))
+              ("\C-c <" . helm-gtags-previous-history)
+              ("\C-c >" . helm-gtags-next-history))
   :hook ((dired-mode eshell-mode c-mode c++-mode asm-mode) . helm-gtags-mode))
 
 (use-package sr-speedbar

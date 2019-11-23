@@ -15,8 +15,8 @@
   (add-hook 'before-save-hook 'gofmt-before-save)
   :bind (:map go-mode-map
               ("\C-c \C-c" . compile)
-              ("C-c C-g" . go-goto-imports)
-              ("C-c C-k" . godoc)
+              ("\C-c \C-g" . go-goto-imports)
+              ("\C-c \C-k" . godoc)
               ("M-j" . godef-jump)))
 
 (use-package go-errcheck
