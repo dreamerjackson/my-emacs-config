@@ -20,109 +20,44 @@
 (setq recentf-max-menu-items 40)
 (setq recentf-max-saved-items 150)
 
-(defun my/helm-hide-minibuffer-maybe ()
-  "Hide minibuffer contents in a Helm session.
-   https://github.com/emacs-helm/helm/blob/353c84076d5489b6a4085537775992226f9d5156/helm.el#L4942"
-  (when (with-helm-buffer helm-echo-input-in-header-line)
-    (let ((ov (make-overlay (point-min) (point-max) nil nil t)))
-      (overlay-put ov 'window (selected-window))
-      (helm-aif (and helm-display-header-line
-                     (helm-attr 'persistent-help))
-          (progn
-            (overlay-put ov 'display
-                         (truncate-string-to-width
-                          (substitute-command-keys
-                           (concat "\\<helm-map>\\[helm-execute-persistent-action]: "
-                                   (format "%s (keeping session)" it)))
-                          (- (window-width) 1)))
-            (overlay-put ov 'face 'helm-header))
-        (overlay-put ov 'face (let ((bg-color (face-background 'default nil)))
-                                `(:background ,bg-color :foreground ,bg-color))))
 
-      (setq cursor-type nil))))
-
-(use-package helm
-  ;; :init
-  ;; (global-set-key (kbd "C-c h") 'helm-command-prefix)
-  ;; (global-unset-key (kbd "C-x c"))
-  :pin melpa-stable
-  :config
-  (helm-mode 1)
-  (helm-autoresize-mode 1)
-
-  (setq helm-split-window-in-side-p t
-        helm-buffers-fuzzy-matching t
-        helm-recentf-fuzzy-match    t
-        helm-M-x-fuzzy-match t
-        helm-etags-fuzzy-match t
-        helm-semantic-fuzzy-match t
-        helm-imenu-fuzzy-match    t
-        ;; https://github.com/emacs-helm/helm/issues/1676
-        helm-move-to-line-cycle-in-source nil
-        helm-ff-file-name-history-use-recentf t
-        helm-echo-input-in-header-line t
-        helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
-        helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
-        helm-autoresize-max-height 0
-        helm-autoresize-min-height 40
-        )
-
-  
-  (add-hook 'helm-minibuffer-set-up-hook 'my/helm-hide-minibuffer-maybe)
-  :bind (("M-x" . helm-M-x)
-         ("C-x C-f" . helm-find-files)
-         ("C-x i" . helm-imenu)
-         ("C-x f" . helm-recentf)
-         ("C-x b" . helm-buffers-list)
-         ("C-x w" . helm-toggle-resplit-and-swap-windows)
-         ;; ("C-SPC" . helm-dabbrev)
-         ;; ("M-y" . helm-show-kill-ring)
-         ))
-
-
-(use-package helm-ls-git
-  :after helm
+;;
+;; ivy mode
+;;
+(use-package ivy
   :ensure t
-  :bind (("C-x C-d" . 'helm-browse-project)))
-
-(use-package helm-descbinds
-  :after helm
-  :config (helm-descbinds-mode))
-
-;; projectile everywhere!
-(use-package projectile
-  :bind ("C-c p" . projectile-command-map)
+  :diminish (ivy-mode . "")
   :config
-  (projectile-mode)
-  ;; (projectile-register-project-type 'go '("Gopkg.toml" "go.mod"))
-  ;; (projectile-register-project-type 'rust '("Cargo.toml"))
+  (ivy-mode 1)
+  (setq ivy-use-virutal-buffers t)
+  (setq enable-recursive-minibuffers t)
+  (setq ivy-height 10)
+  (setq ivy-initial-inputs-alist nil)
+  (setq ivy-count-format "%d/%d")
+  (setq ivy-re-builders-alist
+        `((t . ivy--regex-ignore-order)))
+  )
 
-  (setq projectile-switch-project-action #'projectile-find-file-dwim
-        projectile-completion-system 'helm
-        ;; projectile-enable-caching t
-        projectile-project-root-files-functions #'(projectile-root-top-down
-                                                   projectile-root-top-down-recurring
-                                                   projectile-root-bottom-up
-                                                   projectile-root-local)
-        ))
+;;
+;; counsel
+;;
+(use-package counsel
+  :ensure t
+  :bind (("M-x" . counsel-M-x)
+         ("\C-x \C-f" . counsel-find-file)))
+
+;;
+;; swiper
+;;
+(use-package swiper
+  :ensure t
+  :bind (("\C-s" . swiper))
+  )
+
 
 (use-package ag
   :ensure-system-package (ag . "brew install the_silver_searcher")
   )
-
-(use-package helm-projectile
-  :after (projectile helm)
-  ;; :bind ("C-c f" . helm-projectile-find-file)
-  :config
-  (helm-projectile-on)
-  (setq projectile-switch-project-action 'helm-projectile-find-file))
-
-;; https://github.com/senny/emacs.d/blob/83567797b14e483ae043b7fe57b3154ae9972b4c/init.el#L107
-(use-package helm-ag
-  :after helm-projectile
-  ;; :bind ("C-c g g" . helm-projectile-ag)
-  )
-
 
 (use-package helm-gtags
   :ensure t
