@@ -248,7 +248,9 @@ PREFIX or SUFFIX can wrap the key when passing to `global-set-key'."
 
 (use-package flycheck
   :ensure t
-  :init (global-flycheck-mode))
+  :config
+  (global-flycheck-mode t)
+  )
 
 (use-package yasnippet
   :ensure t

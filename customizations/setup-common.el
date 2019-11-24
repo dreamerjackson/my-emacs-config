@@ -13,8 +13,8 @@
          )
   :ensure-system-package
   ((gopls . "go get golang.org/x/tools/gopls@latest")
-   (rls . "rustup component add rls rust-analysis rust-src")
-   (pyls . "pip install 'python-language-server[all]'")
+  ;; (rls . "rustup component add rls rust-analysis rust-src")
+  ;; (pyls . "pip install 'python-language-server[all]'")
    (typescript-language-server . "npm install -g typescript-language-server")
    ;; (bash-language-server . "npm install -g bash-language-server")
    )

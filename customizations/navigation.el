@@ -88,6 +88,21 @@
          ("C-c s w" . sr-speedbar-select-window)
          ("C-c s r" . sr-speedbar-refresh-toggle)))
 
+
+;;
+;; projectile
+;;
+(use-package projectile
+  :ensure t
+  :bind-keymap
+  ("\C-c p" . projectile-command-map)
+  :config
+  (projectile-mode t)
+  (setq projectile-completion-system 'ivy)
+  (use-package counsel-projectile
+    :ensure t)
+  )
+
 ;; (defun my/ido-recentf-open ()
 ;;   "Use `ido-completing-read' to find a recent file."
 ;;   (interactive)

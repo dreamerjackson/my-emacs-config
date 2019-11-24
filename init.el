@@ -122,10 +122,14 @@
 (load "setup-ruby.el")
 (load "setup-python.el")
 (load "setup-go.el")
-(load "setup-rust.el")
+;;(load "setup-rust.el")
 
 ;; settings for all langauage
 (load "setup-common.el")
 (org-babel-load-file "~/.emacs.d/customizations/misc.org")
 
+
+(let ((govet (flycheck-checker-get 'go-vet 'command)))
+  (when (equal (cadr govet) "tool")
+    (setf (cdr govet) (cddr govet))))
 ;; end
