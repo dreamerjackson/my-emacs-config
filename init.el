@@ -123,10 +123,30 @@
 (load "setup-python.el")
 (load "setup-go.el")
 ;;(load "setup-rust.el")
-
 ;; settings for all langauage
 (load "setup-common.el")
 (org-babel-load-file "~/.emacs.d/customizations/misc.org")
+
+(use-package ox-hugo
+  :ensure t            ;Auto-install the package from Melpa (optional)
+  :after ox)
+
+
+;;;###autoload
+(define-minor-mode org-hugo-auto-export-mode
+  "Toggle auto exporting the Org file using `ox-hugo'."
+  :global nil
+  :lighter ""
+  (if org-hugo-auto-export-mode
+      ;; When the mode is enabled
+      (progn
+        (add-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :append :local))
+    ;; When the mode is disabled
+    (remove-hook 'after-save-hook #'org-hugo-export-wim-to-md-after-save :local)))
+
+
+(provide 'org-hugo-auto-export-mode)
+
 
 
 (let ((govet (flycheck-checker-get 'go-vet 'command)))

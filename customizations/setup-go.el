@@ -17,7 +17,8 @@
               ("\C-c \C-c" . compile)
               ("\C-c \C-g" . go-goto-imports)
               ("\C-c \C-k" . godoc)
-              ("M-j" . godef-jump)))
+              ("M-j" . pop-tag-mark)
+              ("M-k" . godef-jump)))
 
 (use-package go-errcheck
   :after go-mode
