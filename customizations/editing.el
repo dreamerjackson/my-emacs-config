@@ -24,7 +24,29 @@
 (global-subword-mode)
 ;; Key binding to use "hippie expand" for text autocompletion
 ;; http://www.emacswiki.org/emacs/HippieExpand
+
 (global-set-key (kbd "M-/") 'hippie-expand)
+
+
+(global-set-key (kbd "ESC  <up>") 'markdown-move-up)
+(global-set-key (kbd "ESC  <down>") 'markdown-move-down)
+
+
+;; meta key map to alt
+(setq mac-option-modifier 'meta)
+(setq mac-command-modifier 'hyper)
+
+;; Keybonds
+(global-set-key [(hyper a)] 'mark-whole-buffer)
+(global-set-key [(hyper v)] 'yank)
+(global-set-key [(hyper c)] 'kill-ring-save)
+(global-set-key [(hyper s)] 'save-buffer)
+(global-set-key [(hyper l)] 'goto-line)
+(global-set-key [(hyper w)]
+                  (lambda () (interactive) (delete-window)))
+(global-set-key [(hyper z)] 'undo)
+(global-set-key [(hyper q)] 'save-buffers-kill-emacs)
+
 
 ;; Lisp-friendly hippie expand
 (setq hippie-expand-try-functions-list
@@ -228,6 +250,10 @@ PREFIX or SUFFIX can wrap the key when passing to `global-set-key'."
 (global-set-key (kbd "C-c c a") 'mc/edit-beginnings-of-lines)
 (global-set-key (kbd "C-c j") 'json-pretty-print)
 
+;; for markdown list item move up and down
+(global-set-key (kbd "ESC <up>") 'markdown-move-up)
+(global-set-key (kbd "ESC <down>") 'markdown-move-down)
+ 
 
 
 

@@ -21,6 +21,18 @@
 (setq recentf-max-saved-items 150)
 
 
+(winner-mode 1)
+
+(use-package ace-window
+  :ensure t
+  :init
+  (progn
+    (global-set-key [remap other-window] 'ace-window)
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:inherit ace-jump-face-foreground :height 3.0))))) 
+    ))
+
 ;;
 ;; ivy mode
 ;;
@@ -101,6 +113,33 @@
   (setq projectile-completion-system 'ivy)
   (use-package counsel-projectile
     :ensure t)
+  )
+
+
+;; for  buffer
+(setq ido-enable-flex-matching t)
+(setq ido-everywhere t)
+(ido-mode 1)
+;; avy
+
+
+
+;; (use-package avy
+;;   :ensure t
+;;   :bind ("M-s" . avy-goto-char))
+
+(defalias 'list-buffers 'ibuffer)
+
+(use-package dumb-jump
+  :bind (("M-g o" . dumb-jump-go-other-window)
+         ("M-g j" . dumb-jump-go)
+         ("M-g x" . dumb-jump-go-prefer-external)
+         ("M-g z" . dumb-jump-go-prefer-external-other-window))
+  :config 
+  ;; (setq dumb-jump-selector 'ivy) ;; (setq dumb-jump-selector 'helm)
+:init
+(dumb-jump-mode)
+  :ensure
   )
 
 ;; (defun my/ido-recentf-open ()
