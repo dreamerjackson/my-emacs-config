@@ -25,7 +25,9 @@
 (use-package org
   :bind (:map org-mode-map
               ("C-c s" . org-table-sort-lines)
-              ("C-c C-c" . org-toggle-inline-images))
+              ("C-c C-c" . org-toggle-inline-images)
+              
+              )
   :init
   (setq org-src-tab-acts-natively t
         ;; 代码区域禁用第一层缩进 https://emacs.stackexchange.com/a/18892/16450
@@ -83,6 +85,57 @@
                 org-download-screenshot-method "pngpaste %s"
                 org-download-screenshot-file (expand-file-name "screenshot.jpg" temporary-file-directory))
   (setq org-download-annotate-function (lambda (link) "")))
+
+
+;;
+(setq package-check-signature nil)
+
+
+(use-package org-gcal
+  :after org
+  :ensure t
+  :config
+  ;;(org-gcal-sync)
+  (setq org-gcal-client-id "1077987452195-7p6kqbjarg275fqpc5bd8htptrebsh6f.apps.googleusercontent.com"
+      org-gcal-client-secret "jW18X_WrgTSA7Dx0qD5MHkmc"
+      org-gcal-file-alist '(("zhuimengshaonian04@gmail.com" .  "~/my-note-project/gcal.org")))
+(add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
+;;(add-hook 'org-agenda-mode-hook 'org-gcal-sync)
+;;(add-hook 'org-capture-after-finalize-hook 'org-gcal-sync)
+  )
+
+
+    (global-set-key "\C-ca" 'org-agenda)
+    (setq org-agenda-start-on-weekday nil)
+    (setq org-agenda-custom-commands
+          '(("c" "Simple agenda view"
+             ((agenda "")
+              (alltodo "")))))
+
+    (global-set-key (kbd "C-c c") 'org-capture)
+
+    (setq org-agenda-files (list "~/my-note-project/gcal.org"
+                                ;; "~/my-note-project/soe-cal.org"
+                                ;; "~/my-note-project/i.org"
+                                ;; "~/my-note-project/schedule.org"
+                                 ))
+    (setq org-capture-templates
+          '(("a" "Appointment" entry (file  "~/my-note-project/gcal.org" )
+             "* %?\n\n%^T\n\n:PROPERTIES:\n\n:END:\n\n")
+            ("l" "Link" entry (file+headline "~/my-note-project/links.org" "Links")
+             "* %? %^L %^g \n%T" :prepend t)
+            ("b" "Blog idea" entry (file+headline "~/my-note-project/i.org" "Blog Topics:")
+             "* %?\n%T" :prepend t)
+            ("t" "To Do Item" entry (file+headline "~/my-note-project/i.org" "To Do and Notes")
+             "* TODO %?\n%u" :prepend t)
+            ("m" "Mail To Do" entry (file+headline "~/my-note-project/i.org" "To Do and Notes")
+             "* TODO %a\n %?" :prepend t)
+            ("g" "GMail To Do" entry (file+headline "~/my-note-project/i.org" "To Do and Notes")
+             "* TODO %^L\n %?" :prepend t)
+            ("n" "Note" entry (file+headline "~/my-note-project/i.org" "Notes")
+             "* %u %? " :prepend t)
+            ))
+
 
 ;; https://emacs-china.org/t/topic/440
 (use-package cnfonts
