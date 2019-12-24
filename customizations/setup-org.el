@@ -99,7 +99,7 @@
   (setq org-gcal-client-id "1077987452195-7p6kqbjarg275fqpc5bd8htptrebsh6f.apps.googleusercontent.com"
       org-gcal-client-secret "jW18X_WrgTSA7Dx0qD5MHkmc"
       org-gcal-file-alist '(("zhuimengshaonian04@gmail.com" .  "~/my-note-project/gcal.org")))
-(add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
+;;(add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
 ;;(add-hook 'org-agenda-mode-hook 'org-gcal-sync)
 ;;(add-hook 'org-capture-after-finalize-hook 'org-gcal-sync)
   )
@@ -115,6 +115,7 @@
     (global-set-key (kbd "C-c c") 'org-capture)
 
     (setq org-agenda-files (list "~/my-note-project/gcal.org"
+                                "~/my-note-project/todo.org"
                                 ;; "~/my-note-project/soe-cal.org"
                                 ;; "~/my-note-project/i.org"
                                 ;; "~/my-note-project/schedule.org"
