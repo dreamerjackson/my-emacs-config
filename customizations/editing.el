@@ -263,14 +263,14 @@ PREFIX or SUFFIX can wrap the key when passing to `global-set-key'."
 ;; (require 'minimal-session-saver)
 ;; (minimal-session-saver-install-aliases)
 ;; (setq minimal-session-saver-store-on-exit t)
-(use-package persistent-scratch
-  :config
-  (setq persistent-scratch-autosave-interval 5)
-  (setq persistent-scratch-save-file
-        (concat user-emacs-directory
-                (if (display-graphic-p) ".persistent-scratch_gui" ".persistent-scratch_terminal")))
-  (ignore-errors
-    (persistent-scratch-setup-default)))
+;; (use-package persistent-scratch
+;;   :config
+;;   (setq persistent-scratch-autosave-interval 5)
+;;   (setq persistent-scratch-save-file
+;;         (concat user-emacs-directory
+;;                 (if (display-graphic-p) ".persistent-scratch_gui" ".persistent-scratch_terminal")))
+;;   (ignore-errors
+;;     (persistent-scratch-setup-default)))
 
 (use-package yaml-mode
   :mode "\\.yml\\|ymal\\'")
