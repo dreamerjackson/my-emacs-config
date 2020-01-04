@@ -1,0 +1,9 @@
+* Default Workspace
+** _posts
+ - path :: ~/Desktop/hexo-blog/hexo-test/source/_posts
+** my-note-project
+ - path :: ~/my-note-project
+** xv6-riscv-fall19
+ - path :: ~/Downloads/s.6.828/xv6-riscv-fall19
+** go-project
+ - path :: ~/Downloads/go-project
