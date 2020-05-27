@@ -59,6 +59,8 @@
 
 ;; don't pop up font menu
 (global-set-key (kbd "s-t") '(lambda () (interactive)))
+(global-set-key (kbd "C-x C-h") 'org-todo-list)
+(global-set-key (kbd "C-x C-k") 'org-schedule)
 
 ;; no bell
 (setq ring-bell-function 'ignore)

@@ -65,6 +65,7 @@
 (global-set-key (kbd "C-+") 'text-scale-increase)
 (global-set-key (kbd "C--") 'text-scale-decrease)
 (global-set-key (kbd "C-0") 'text-scale-adjust)
+(global-set-key (kbd "<M-left>") 'org-metaleft)
 
 (electric-indent-mode)
 (setq kill-do-not-save-duplicates t)
@@ -219,6 +220,7 @@
 (global-set-key (kbd "C-c h s") 'my/storage-size->human)
 (global-set-key (kbd "C-c +") 'evil-numbers/inc-at-pt)
 (global-set-key (kbd "C-c -") 'evil-numbers/dec-at-pt)
+;;(global-set-key (kbd "ESC <left>") 'org-metaleft)
 
 ;; https://emacs.stackexchange.com/questions/39129/multiple-cursors-and-return-key
 (use-package multiple-cursors

@@ -2,9 +2,14 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("org-capture-last-stored"
- (filename . "~/my-note-project/gcal.org")
- (front-context-string . "* yoxi!!!!!!\n\n<2")
- (rear-context-string . "PERTIES:\n\n:END:\n")
- (position . 4695))
+(("org-refile-last-stored"
+ (filename . "~/my-note-project/study.org")
+ (front-context-string . "** 网络书籍：\n*** TCP")
+ (rear-context-string . "网络\n** Wireshark\n")
+ (position . 2953))
+("org-capture-last-stored"
+ (filename . "~/my-note-project/i.org")
+ (front-context-string . "** TODO ddd\n[202")
+ (rear-context-string . "To Do and Notes\n")
+ (position . 19))
 )

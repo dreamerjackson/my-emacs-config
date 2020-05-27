@@ -127,6 +127,10 @@
 ;; settings for all langauage
 (load "setup-common.el")
 (org-babel-load-file "~/.emacs.d/customizations/misc.org")
+;;load
+(load "gtags.el")
+
+
 
 (use-package ox-hugo
   :ensure t            ;Auto-install the package from Melpa (optional)
@@ -234,5 +238,9 @@
 (use-package treemacs-magit
   :after treemacs magit
   :ensure t)
+
+
+
+
 
 ;; end

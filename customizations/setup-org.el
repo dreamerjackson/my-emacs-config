@@ -25,9 +25,12 @@
 (use-package org
   :bind (:map org-mode-map
               ("C-c s" . org-table-sort-lines)
-              ("C-c C-c" . org-toggle-inline-images)
+              ("C-c y" . org-metaleft)
+              ("C-c u" . org-metaright)
+              ("C-t C-c" . org-toggle-checkbox)
+              ("C-t C-d" . org-insert-todo-heading))
+  ("C-c C-l" . org-insert-link)
               
-              )
   :init
   (setq org-src-tab-acts-natively t
         ;; 代码区域禁用第一层缩进 https://emacs.stackexchange.com/a/18892/16450
@@ -89,21 +92,23 @@
 
 ;;
 (setq package-check-signature nil)
-
-
-(use-package org-gcal
-  :after org
-  :ensure t
-  :config
-  ;;(org-gcal-sync)
-  (setq org-gcal-client-id "1077987452195-7p6kqbjarg275fqpc5bd8htptrebsh6f.apps.googleusercontent.com"
-      org-gcal-client-secret "jW18X_WrgTSA7Dx0qD5MHkmc"
-      org-gcal-file-alist '(("zhuimengshaonian04@gmail.com" .  "~/my-note-project/gcal.org")))
-;;(add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
-;;(add-hook 'org-agenda-mode-hook 'org-gcal-sync)
-;;(add-hook 'org-capture-after-finalize-hook 'org-gcal-sync)
-  )
-
+;
+(define-key org-mode-map (kbd "C-c C-x l") nil)
+(define-key org-mode-map (kbd "C-c C-x r") nil)
+;;;;;;;;;;;
+;; (use-package org-gcal
+;;   :after org
+;;   :ensure t
+;;   :config
+;;   ;;(org-gcal-sync)
+;;   (setq org-gcal-client-id "1077987452195-7p6kqbjarg275fqpc5bd8htptrebsh6f.apps.googleusercontent.com"
+;;         org-gcal-client-secret "jW18X_WrgTSA7Dx0qD5MHkmc"
+;;         org-gcal-file-alist '(("zhuimengshaonian04@gmail.com" .  "~/my-note-project/gcal.org")))
+;;   ;;(add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
+;;   ;;(add-hook 'org-agenda-mode-hook 'org-gcal-sync)
+;;   ;;(add-hook 'org-capture-after-finalize-hook 'org-gcal-sync)
+;;   )
+ 
 
     (global-set-key "\C-ca" 'org-agenda)
     (setq org-agenda-start-on-weekday nil)
@@ -114,8 +119,12 @@
 
     (global-set-key (kbd "C-c c") 'org-capture)
 
-    (setq org-agenda-files (list "~/my-note-project/gcal.org"
-                                "~/my-note-project/todo.org"
+(setq org-agenda-files (list "~/my-note-project/todo.org"
+                             "~/my-note-project/work.org"
+                             "~/my-note-project/thinking.org"
+                             "~/my-note-project/study.org"
+                             "~/my-note-project/career.org"
+                                ;;"~/my-note-project/gcal.org"
                                 ;; "~/my-note-project/soe-cal.org"
                                 ;; "~/my-note-project/i.org"
                                 ;; "~/my-note-project/schedule.org"

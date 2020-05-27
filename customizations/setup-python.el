@@ -1,5 +1,5 @@
-(use-package pyenv-mode
-  :config
-  (pyenv-mode)
-  )
+;; (use-package pyenv-mode
+;;   :config
+;;   (pyenv-mode)
+;;   )
 

@@ -7,3 +7,5 @@
  - path :: ~/Downloads/s.6.828/xv6-riscv-fall19
 ** go-project
  - path :: ~/Downloads/go-project
+** viper
+ - path :: ~/go/src/gitlab.sz.sensetime.com/viper
