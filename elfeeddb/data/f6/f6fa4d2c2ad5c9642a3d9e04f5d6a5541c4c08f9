@@ -1,0 +1,354 @@
+
+<p>I&#8217;m a big fan of testing, specifically <a href="https://dave.cheney.net/2019/04/03/absolute-unit-test">unit testing</a> and TDD (<a href="https://www.youtube.com/watch?v=EZ05e7EMOLM">done correctly</a>, of course). A practice that has grown around Go projects is the idea of a table driven test. This post explores the how and why of writing a table driven test.</p>
+
+
+
+<p>Let’s say we have a function that splits strings:</p>
+
+
+
+<pre class="wp-block-preformatted">// Split slices s into all substrings separated by sep and<br>// returns a slice of the substrings between those separators.<br>func Split(s, sep string) []string {<br>    var result []string<br>    i := strings.Index(s, sep)<br>    for i &gt; -1 {<br>        result = append(result, s[:i])<br>        s = s[i+len(sep):]<br>        i = strings.Index(s, sep)<br>    }<br>    return append(result, s)<br>}</pre>
+
+
+
+<p>In Go, unit tests are just regular Go functions (with a few rules) so we write a unit test for this function starting with a file in the same directory, with the same package name, <code>strings</code>.</p>
+
+
+
+<pre class="wp-block-preformatted">package split<br><br>import (<br>    "reflect"<br>    "testing"<br>)<br><br>func TestSplit(t *testing.T) {<br>    got := Split("a/b/c", "/")<br>    want := []string{"a", "b", "c"}<br>    if !reflect.DeepEqual(want, got) {<br>         t.Fatalf("expected: %v, got: %v", want, got)<br>    }<br>}</pre>
+
+
+
+<p>Tests are just regular Go functions with a few rules:</p>
+
+
+
+<ol><li>The name of the test function must start with&nbsp;<code>Test</code>.</li><li>The test function must take one argument of type&nbsp;<code>*testing.T</code>. A&nbsp;<code>*testing.T</code>&nbsp;is a type injected by the testing package itself, to provide ways to print, skip, and fail the test.</li></ol>
+
+
+
+<p>In our test we call&nbsp;<code>Split</code>&nbsp;with some inputs, then compare it to the result we expected.</p>
+
+
+
+<h2 id="_code_coverage">Code coverage</h2>
+
+
+
+<p>The next question is, what is the coverage of this package? Luckily the go tool has a built in branch coverage. We can invoke it like this:</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test -coverprofile=c.out</strong><br>PASS<br>coverage: 100.0% of statements<br>ok      split   0.010s</pre>
+
+
+
+<p>Which tells us we have 100% branch coverage, which isn’t really surprising, there’s only one branch in this code.</p>
+
+
+
+<p>If we want to dig in to the coverage report the go tool has several options to print the coverage report. We can use <code>go tool cover -func</code> to break down the coverage per function:</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go tool cover -func=c.out</strong><br>split/split.go:8:       Split          100.0%<br>total:                  (statements)   100.0%</pre>
+
+
+
+<p>Which isn’t that exciting as we only have one function in this package, but I’m sure you’ll find more exciting packages to test.</p>
+
+
+
+<h3>Spray some .bashrc on that</h3>
+
+
+
+<p>This pair of commands is so useful for me I have a shell alias which runs the test coverage and the report in one command:</p>
+
+
+
+<pre class="wp-block-preformatted">cover () {<br>    local t=$(mktemp -t cover)<br>    go test $COVERFLAGS -coverprofile=$t $@ \<br>        &amp;&amp; go tool cover -func=$t \<br>        &amp;&amp; unlink $t<br>}</pre>
+
+
+
+<h2>Going beyond 100% coverage</h2>
+
+
+
+<p>So, we wrote one test case, got 100% coverage, but this isn’t really the end of the story. We have good branch coverage but we probably need to test some of the boundary conditions. For example, what happens if we try to split it on comma?</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplitWrongSep(t *testing.T) {<br>    got := Split("a/b/c", ",")<br>    want := []string{"a/b/c"}<br>    if !reflect.DeepEqual(want, got) {<br>        t.Fatalf("expected: %v, got: %v", want, got)<br>    }<br>}</pre>
+
+
+
+<p>Or, what happens if there are no separators in the source string?</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplitNoSep(t *testing.T) {<br>    got := Split("abc", "/")<br>    want := []string{"abc"}<br>    if !reflect.DeepEqual(want, got) {<br>        t.Fatalf("expected: %v, got: %v", want, got)<br>    }<br>}</pre>
+
+
+
+<p>We’re starting build a set of test cases that exercise boundary conditions. This is good.</p>
+
+
+
+<h2>Introducing table driven tests</h2>
+
+
+
+<p>However the there is a lot of duplication in our tests. For each test case only the input, the expected output, and name of the test case change. Everything else is boilerplate. What we’d like to to set up all the inputs and expected outputs and feel them to a single test harness. This is a great time to introduce table driven testing. </p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    type test struct {<br>        input string<br>        sep   string<br>        want  []string<br>    }<br><br>    tests := []test{<br>        {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        {input: "abc", sep: "/", want: []string{"abc"}},<br>    }<br><br>    for _, tc := range tests {<br>        got := Split(tc.input, tc.sep)<br>        if !reflect.DeepEqual(tc.want, got) {<br>            t.Fatalf("expected: %v, got: %v", tc.want, got)<br>        }<br>    }<br>}</pre>
+
+
+
+<p>We declare a structure to hold our test inputs and expected outputs. This is our table. The <code>tests</code> structure is usually a local declaration because we want to reuse this name for other tests in this package.</p>
+
+
+
+<p>In fact, we don’t even need to give the type a name, we can use an anonymous struct literal to reduce the boilerplate like this:</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := []struct {<br>        input string<br>        sep   string<br>        want  []string<br>    }{<br>        {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        {input: "abc", sep: "/", want: []string{"abc"}},<br>    } <br><br>    for _, tc := range tests {<br>        got := Split(tc.input, tc.sep)<br>        if !reflect.DeepEqual(tc.want, got) {<br>            t.Fatalf("expected: %v, got: %v", tc.want, got)<br>        }<br>    }<br>}</pre>
+
+
+
+<p>Now, adding a new test is a straight forward matter; simply add another line the <code>tests</code> structure. For example, what will happen if our input string has a trailing separator?</p>
+
+
+
+<pre class="wp-block-preformatted">{input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>{input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>{input: "abc", sep: "/", want: []string{"abc"}},<br><strong>{input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}}, // trailing sep</strong></pre>
+
+
+
+<p>But, when we run <code>go test</code>, we get</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test</strong><br>--- FAIL: TestSplit (0.00s)<br>    split_test.go:24: expected: [a b c], got: [a b c ]<br></pre>
+
+
+
+<p>Putting aside the test failure, there are a few problems to talk about.</p>
+
+
+
+<p>The first is by rewriting each test from a function to a row in a table we’ve lost the name of the failing test. We added a comment in the test file to call out this case, but we don’t have access to that comment in the <code>go test</code> output.</p>
+
+
+
+<p>There are a few ways to resolve this. You’ll see a mix of styles in use in Go code bases because the table testing idiom is evolving as people continue to experiment with the form.</p>
+
+
+
+<h2>Enumerating test cases</h2>
+
+
+
+<p>As tests are stored in a slice we can print out the index of the test case in the failure message:</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := []struct {<br>        input string<br>        sep . string<br>        want  []string<br>    }{<br>        {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        {input: "abc", sep: "/", want: []string{"abc"}},<br>        {input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}},<br>    }<br><br>    for i, tc := range tests {<br>        got := Split(tc.input, tc.sep)<br>        if !reflect.DeepEqual(tc.want, got) {<br>            t.Fatalf("<strong>test %d:</strong> expected: %v, got: %v", <strong>i+1</strong>, tc.want, got)<br>        }<br>    }<br>}</pre>
+
+
+
+<p>Now when we run <code>go test</code> we get this</p>
+
+
+
+<pre class="wp-block-preformatted">% go test<br>--- FAIL: TestSplit (0.00s)<br>    split_test.go:24: <strong>test 4:</strong> expected: [a b c], got: [a b c ]<br></pre>
+
+
+
+<p>Which is a little better. Now we know that the fourth test is failing, although we have to do a little bit of fudging because slice indexing—​and range iteration—​is zero based. This requires consistency across your test cases; if some use zero base reporting and others use one based, it’s going to be confusing. And, if the list of test cases is long, it could be difficult to count braces to figure out exactly which fixture constitutes test case number four.</p>
+
+
+
+<h2>Give your test cases names</h2>
+
+
+
+<p>Another common pattern is to include a name field in the test fixture.</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := []struct {<br><strong>        name  string</strong><br>        input string<br>        sep   string<br>        want  []string<br>    }{<br>        {name: "simple", input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        {name: "wrong sep", input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        {name: "no sep", input: "abc", sep: "/", want: []string{"abc"}},<br>        {name: "trailing sep", input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}},<br>    }<br><br>    for _, tc := range tests {<br>        got := Split(tc.input, tc.sep)<br>        if !reflect.DeepEqual(tc.want, got) {<br>            t.Fatalf("<strong>%s:</strong> expected: %v, got: %v", <strong>tc.name</strong>, tc.want, got)<br>        }<br>    }<br>}</pre>
+
+
+
+<p>Now when the test fails we have a descriptive name for what the test was doing. We no longer have to try to figure it out from the output—​also, now have a string we can search on.</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test</strong><br>--- FAIL: TestSplit (0.00s)<br>    split_test.go:25: <strong>trailing sep</strong>: expected: [a b c], got: [a b c ]<br></pre>
+
+
+
+<p>We can dry this up even more using a map literal syntax:</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := <strong>map[string]struct {<br>        input string<br>        sep   string<br>        want  []string<br>    }</strong>{ <br>        "simple":       {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}}, <br>        "wrong sep":    {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        "no sep":       {input: "abc", sep: "/", want: []string{"abc"}},<br>        "trailing sep": {input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}},<br>    }<br><br>    for name, tc := range tests {<br>        got := Split(tc.input, tc.sep)<br>        if !reflect.DeepEqual(tc.want, got) {<br>            t.Fatalf("<strong>%s:</strong> expected: %v, got: %v", <strong>name</strong>, tc.want, got)<br>        }<br>    }<br>}</pre>
+
+
+
+<p>Using a map literal syntax we define our test cases not as a slice of structs, but as map of test names to test fixtures. There’s also a side benefit of using a map that is going to potentially improve the utility of our tests.</p>
+
+
+
+<p>Map iteration order is <em>undefined</em> <span id='easy-footnote-1-3620' class='easy-footnote-margin-adjust'></span><span class='easy-footnote'><a href='https://dave.cheney.net/2019/05/07/prefer-table-driven-tests#easy-footnote-bottom-1-3620' title='Please don&amp;#8217;t email me to argue that map iteration order is &lt;em&gt;random&lt;/em&gt;. &lt;a href=&quot;https://golang.org/ref/spec#For_statements&quot;&gt;It&amp;#8217;s not&lt;/a&gt;.'><sup>1</sup></a></span> This means each time we run <code>go test</code>, our tests are going to be potentially run in a different order.</p>
+
+
+
+<p>This is super useful for spotting conditions where test pass when run in statement order, but not otherwise. If you find that happens you probably have some global state that is being mutated by one test with subsequent tests depending on that modification.</p>
+
+
+
+<h2 id="_sub_tests">Introducing sub tests</h2>
+
+
+
+<p>Before we fix the failing test there are a few other issues to address in our table driven test harness.</p>
+
+
+
+<p>The first is we’re calling <code>t.Fatalf</code> when one of the test cases fails. This means after the first failing test case we stop testing the other cases. Because test cases are run in an undefined order, if there is a test failure, it would be nice to know if it was the only failure or just the first.</p>
+
+
+
+<p>The testing package would do this for us if we go to the effort to write out each test case as its own function, but that&#8217;s quite verbose. The good news is since Go 1.7 a new feature was added that lets us do this easily for table driven tests. They&#8217;re called <a href="https://blog.golang.org/subtests">sub tests</a>.</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := map[string]struct {<br>        input string<br>        sep   string<br>        want  []string<br>    }{<br>        "simple":       {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        "wrong sep":    {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        "no sep":       {input: "abc", sep: "/", want: []string{"abc"}},<br>        "trailing sep": {input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}},<br>    }<br><br>    for name, tc := range tests {<br>        <strong>t.Run(name, func(t *testing.T) {<br>            got := Split(tc.input, tc.sep)<br>            if !reflect.DeepEqual(tc.want, got) {<br>                t.Fatalf("expected: %v, got: %v", tc.want, got)<br>            }<br>        })</strong><br>    }<br>}</pre>
+
+
+
+<p>As each sub test now has a name we get that name automatically printed out in any test runs.</p>
+
+
+
+<pre class="wp-block-preformatted">%<strong> go test</strong><br>--- FAIL: TestSplit (0.00s)<br>    --- FAIL: <strong>TestSplit/trailing_sep</strong> (0.00s)<br>        split_test.go:25: expected: [a b c], got: [a b c ]<br><br></pre>
+
+
+
+<p>Each subtest is its own anonymous function, therefore we can use&nbsp;<code>t.Fatalf</code>,&nbsp;<code>t.Skipf</code>, and all the other&nbsp;<code>testing.T</code>helpers, while retaining the compactness of a table driven test.</p>
+
+
+
+<h3>Individual sub test cases can be executed directly</h3>
+
+
+
+<p>Because sub tests have a name, you can run a selection of sub tests by name using the&nbsp;<code>go test -run</code>&nbsp;flag.</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test -run=.*/trailing -v</strong><br>=== RUN   TestSplit<br>=== RUN   TestSplit/trailing_sep<br>--- FAIL: TestSplit (0.00s)<br>    --- FAIL: TestSplit/trailing_sep (0.00s)<br>        split_test.go:25: expected: [a b c], got: [a b c ]<br></pre>
+
+
+
+<h2>Comparing what we got with what we wanted</h2>
+
+
+
+<p>Now we’re ready to fix the test case. Let’s look at the error.</p>
+
+
+
+<pre class="wp-block-preformatted">--- FAIL: TestSplit (0.00s)<br>    --- FAIL: TestSplit/trailing_sep (0.00s)<br>        split_test.go:25: expected: [a b c], got: [a b c ]</pre>
+
+
+
+<p>Can you spot the problem? Clearly the slices are different, that’s what <code>reflect.DeepEqual</code> is upset about. But spotting the actual difference isn’t easy, you have to spot that extra space after <code>c</code>. This might look simple in this simple example, but it is any thing but when you&#8217;re comparing two complicated deeply nested gRPC structures.</p>
+
+
+
+<p>We can improve the output if we switch to the&nbsp;<code>%#v</code>&nbsp;syntax to view the value as a Go(ish) declaration:</p>
+
+
+
+<pre class="wp-block-preformatted">got := Split(tc.input, tc.sep)<br>if !reflect.DeepEqual(tc.want, got) {<br>    t.Fatalf("<strong>expected: %#v, got: %#v</strong>", tc.want, got)<br>}</pre>
+
+
+
+<p>Now when we run our test it’s clear that the problem is there is an extra blank element in the slice.</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test</strong><br>--- FAIL: TestSplit (0.00s)<br>    --- FAIL: TestSplit/trailing_sep (0.00s)<br>        split_test.go:25: <strong>expected: []string{"a", "b", "c"}, got: []string{"a", "b", "c", ""}</strong><br></pre>
+
+
+
+<p>But before we go to fix our test failure I want to talk a little bit more about choosing the right way to present test failures. Our <code>Split</code> function is simple, it takes a primitive string and returns a slice of strings, but what if it worked with structs, or worse, pointers to structs?</p>
+
+
+
+<p>Here is an example where&nbsp;<code>%#v</code>&nbsp;does not work as well:</p>
+
+
+
+<pre class="wp-block-preformatted">func main() {<br>    type T struct {<br>        I int<br>    }<br>    x := []*T{{1}, {2}, {3}}<br>    y := []*T{{1}, {2}, {4}}<br>    fmt.Printf("%v %v\n", x, y)<br>    fmt.Printf("%#v %#v\n", x, y)<br>}</pre>
+
+
+
+<p>The first <code>fmt.Printf</code>prints the unhelpful, but expected slice of addresses; <code>[0xc000096000 0xc000096008 0xc000096010] [0xc000096018 0xc000096020 0xc000096028]</code>. However our <code>%#v</code> version doesn&#8217;t fare any better, printing a slice of addresses cast to <code>*main.T</code>;<code>[]*main.T{(*main.T)(0xc000096000), (*main.T)(0xc000096008), (*main.T)(0xc000096010)} []*main.T{(*main.T)(0xc000096018), (*main.T)(0xc000096020), (*main.T)(0xc000096028)}</code></p>
+
+
+
+<p>Because of the limitations in using any <code>fmt.Printf</code> verb, I want to introduce the <a href="https://github.com/google/go-cmp">go-cmp</a> library from Google. </p>
+
+
+
+<p>The goal of the cmp library is it is specifically to compare two values. This is similar to <code>reflect.DeepEqual</code>, but it has more capabilities. Using the cmp pacakge you can, of course, write:</p>
+
+
+
+<pre class="wp-block-preformatted">func main() {<br>    type T struct {<br>        I int<br>    }<br>    x := []*T{{1}, {2}, {3}}<br>    y := []*T{{1}, {2}, {4}}<br>    fmt.Println(cmp.Equal(x, y)) <strong>// false</strong><br>}</pre>
+
+
+
+<p>But far more useful for us with our test function is the <code>cmp.Diff</code> function which will produce a textual description of what is different between the two values, recursively.</p>
+
+
+
+<pre class="wp-block-preformatted">func main() {<br>    type T struct {<br>        I int<br>    }<br>    x := []*T{{1}, {2}, {3}}<br>    y := []*T{{1}, {2}, {4}}<br>    diff := cmp.Diff(x, y)<br>    fmt.Printf(diff)<br>}</pre>
+
+
+
+<p>Which instead produces:</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go run</strong><br>{[]*main.T}[2].I:<br>         -: 3<br>         +: 4</pre>
+
+
+
+<p>Telling us that at element 2 of the slice of <code>T</code>s the <code>I</code>field was expected to be 3, but was actually 4.</p>
+
+
+
+<p>Putting this all together we have our table driven go-cmp test</p>
+
+
+
+<pre class="wp-block-preformatted">func TestSplit(t *testing.T) {<br>    tests := map[string]struct {<br>        input string<br>        sep   string<br>        want  []string<br>    }{<br>        "simple":       {input: "a/b/c", sep: "/", want: []string{"a", "b", "c"}},<br>        "wrong sep":    {input: "a/b/c", sep: ",", want: []string{"a/b/c"}},<br>        "no sep":       {input: "abc", sep: "/", want: []string{"abc"}},<br>        "trailing sep": {input: "a/b/c/", sep: "/", want: []string{"a", "b", "c"}},<br>    }<br><br>    for name, tc := range tests {<br>        t.Run(name, func(t *testing.T) {<br>            got := Split(tc.input, tc.sep)<br>            <strong>diff := cmp.Diff(tc.want, got)<br>            if diff != "" {<br>                t.Fatalf(diff)<br>            }</strong><br>        })<br>    }<br>}</pre>
+
+
+
+<p>Running this we get</p>
+
+
+
+<pre class="wp-block-preformatted">% go test<br>--- FAIL: TestSplit (0.00s)<br>    --- FAIL: TestSplit/trailing_sep (0.00s)<br>        split_test.go:27: {[]string}[?-&gt;3]:<br>                -: &lt;non-existent&gt;<br>                +: ""<br>FAIL<br>exit status 1<br>FAIL    split   0.006s</pre>
+
+
+
+<p>Using <code>cmp.Diff</code> our test harness isn’t just telling us that what we got and what we wanted were different. Our test is telling us that the strings are different lengths, the third index in the fixture shouldn&#8217;t exist, but the actual output we got an empty string, &#8220;&#8221;. From here fixing the test failure is straight forward.</p>

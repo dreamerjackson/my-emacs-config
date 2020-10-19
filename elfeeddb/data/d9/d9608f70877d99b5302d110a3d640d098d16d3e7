@@ -1,0 +1,58 @@
+
+<p>The name of a variable should describe its contents, not the&nbsp;<em>type</em>&nbsp;of the contents. Consider this example:</p>
+
+
+
+<pre class="wp-block-preformatted">var usersMap map[string]*User</pre>
+
+
+
+<p>What are some good properties of this declaration? We can see that it&#8217;s a map, and it has something to do with the&nbsp;<code>*User</code>&nbsp;type, so that’s probably good. But&nbsp;<code>usersMap</code><em>is</em>&nbsp;a map and Go, being a statically typed language, won’t let us accidentally use a map where a different type is required, so the&nbsp;<code>Map</code>&nbsp;suffix as a safety precaution is redundant.</p>
+
+
+
+<p>Now, consider what happens if we declare other variables using this pattern:</p>
+
+
+
+<pre class="wp-block-preformatted">var (<br>        companiesMap map[string]*Company<br>        productsMap  map[string]*Products<br>)<br></pre>
+
+
+
+<p>Now we have three map type variables in scope,&nbsp;<code>usersMap</code>,&nbsp;<code>companiesMap</code>, and&nbsp;<code>productsMap</code>, all mapping <code>string</code>s to different <code>struct</code> types. We know they are maps, and we also know that their declarations prevent us from using one in place of another—​the compiler will throw an error if we try to use&nbsp;<code>companiesMap</code>&nbsp;where the code is expecting a&nbsp;<code>map[string]*User</code>. In this situation it’s clear that the&nbsp;<code>Map</code>&nbsp;suffix does not improve the clarity of the code, its just extra boilerplate to type.</p>
+
+
+
+<p>My suggestion is avoid any suffix that resembles the <em>type</em> of the variable. Said another way, if&nbsp;<code>users</code>&nbsp;isn’t descriptive enough, then&nbsp;<code>usersMap</code>&nbsp;won’t be either.</p>
+
+
+
+<p>This advice also applies to function parameters. For example:</p>
+
+
+
+<pre class="wp-block-preformatted">type Config struct {<br>        //<br>}<br><br>func WriteConfig(w io.Writer, config *Config)</pre>
+
+
+
+<p>Naming the&nbsp;<code>*Config</code>&nbsp;parameter&nbsp;<code>config</code>&nbsp;is redundant. We know it&#8217;s a&nbsp;pointer to a <code>Config</code>, it says so right there in the declaration. Instead consider if&nbsp;<code>conf</code> will do, or maybe&nbsp;just <code>c</code>&nbsp;if the lifetime of the variable is short enough.</p>
+
+
+
+<p>This advice is more than just a desire for brevity. If there is more that one&nbsp;<code>*Config</code>&nbsp;in scope at any one time, calling them&nbsp;<code>config1</code>&nbsp;and&nbsp;<code>config2</code>&nbsp;is less descriptive than calling them&nbsp;<code>original</code>&nbsp;and&nbsp;<code>updated</code> . The latter are less likely to be accidentally transposed—something the compiler won&#8217;t catch—while the former differ only in a one character suffix.</p>
+
+
+
+<p>Finally, don’t let package names steal good variable names. The name of an imported identifier includes its package name. For example the&nbsp;<code>Context</code>&nbsp;type in the&nbsp;<code>context</code>&nbsp;package will be known as&nbsp;<code>context.Context</code> when imported into another package . This makes it impossible to use&nbsp;<code>context</code>&nbsp;as a variable or type, unless of course you rename the import, but that&#8217;s throwing good after bad. This is why the local declaration for&nbsp;<code>context.Context</code>&nbsp;types is traditionally&nbsp;<code>ctx</code>. eg.</p>
+
+
+
+<pre class="wp-block-preformatted">func WriteLog(ctx context.Context, message string)</pre>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>A variable&#8217;s name should be independent of its type. You shouldn’t name your variables after their types for the same reason you wouldn&#8217;t name your pets &#8220;dog&#8221; or &#8220;cat&#8221;. You shouldn’t include the name of your type in the name of your variable for the same reason.</p>

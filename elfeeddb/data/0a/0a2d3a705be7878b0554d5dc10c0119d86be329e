@@ -1,0 +1,362 @@
+
+<p><em>This article is based on my </em><a href="https://2019.gophercon.sg/"><em>GopherCon Singapore 2019</em></a><em> presentation. In the presentation I referenced material from my post <a href="https://dave.cheney.net/2014/05/24/on-declaring-variables">on declaring variables</a> and my <a href="https://dave.cheney.net/2016/08/20/solid-go-design">GolangUK 2017 presentation on SOLID design</a>. For brevity those parts of the talk have been elided from this article. If you prefer, you can <a href="https://www.youtube.com/watch?v=NwEuRO_w8HE">watch the recording of the talk</a>.</em> </p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>Readability is often cited as one of Go’s core tenets, I disagree. In this article I&#8217;ll discuss the differences between clarity and readability, show you what I mean by clarity and how it applies to Go code, and argue that Go programmers should strive for clarity&#8211;not just readability&#8211;in their programs.</p>
+
+
+
+<h2>Why would I read your code?</h2>
+
+
+
+<p>Before I pick apart the difference between clarity and readability, perhaps the question to ask is, &#8220;why would I read your code?&#8221; To be clear, when I say <em>I</em>, I don’t mean me, I mean you. And when I say <em>your code</em> I also mean you, but in the third person. So really what I’m asking is, &#8220;why would <em>you read</em> another person’s code?&#8221;</p>
+
+
+
+<p>I think Russ Cox, paraphrasing Titus Winters, put it best:</p>
+
+
+
+<blockquote class="wp-block-quote"><p>Software engineering is what happens to programming when you add time and other programmers.</p><cite><em>–</em>Russ Cox, GopherCon Singapore 2018</cite></blockquote>
+
+
+
+<p>The answer to the question, “why would I read your code” is, because we have to work together.&nbsp;Maybe we don’t work in the same office, or live in the same city, maybe we don’t even work at the same company, but we do collaborate on a piece of software, or more likely consume it as a dependency.</p>
+
+
+
+<p>This is the essence of Russ and Titus&#8217; observation; software engineering is the collaboration of software engineers over time. I have to read your code, and you read mine, so that I can understand it, so that you can maintain it, and in short, so that any programmer can change it.</p>
+
+
+
+<p>Russ is making the distinction between software programming and software engineering. The former is a program you write for yourself, the latter is a program, ​a project, a service, a product, ​that many people will contribute to over time. Engineers will come and go, teams will grow and shrink, requirements will change, features will be added and bugs fixed. This is the nature of software engineering.</p>
+
+
+
+<h2>We don&#8217;t read code, we decode it</h2>
+
+
+
+<blockquote class="wp-block-quote"><p>It was sometime after that presentation that I finally realized the obvious: Code is not literature. We don’t read code, we <em>decode</em> it.</p><cite><em>–</em><a href="http://www.gigamonkeys.com/code-reading/">Peter Seibel</a></cite></blockquote>
+
+
+
+<p>The author Peter Seibel suggests that programs are not read, but are instead decoded. In hindsight this is obvious, after all we call it source code, not source literature. The source code of a program is an intermediary form, somewhere between our concept&#8211;what’s inside our heads&#8211;and the computer’s executable notation.</p>
+
+
+
+<p>In my experience, the most common complaint when faced with a foreign codebase written by someone, or some team, is the code is unreadable.&nbsp;Perhaps you agree with me?</p>
+
+
+
+<p>But readability as a concept is subjective.&nbsp;Readability is nit picking about line length and variable names. Readability is holy wars about brace position. Readability is the hand to hand combat of style guides and code review guidelines that regulate the use of whitespace.</p>
+
+
+
+<h2>Clarity ≠ Readability</h2>
+
+
+
+<p>Clarity, on the other hand, is the property of the code on the page. Clear code is independent of the low level details of function names and indentation because clear code is concerned with what the code is doing, not just how it is written down.</p>
+
+
+
+<p>When you or I say that a foreign codebase is unreadable, what I think what we really mean is, <em>I don’t understand it</em>. For the remainder of this article I want to try to explore the difference between clear code and code that is simply readable, because the goal is not how quickly you can read a piece of code, but how quickly you can grasp its meaning.</p>
+
+
+
+<h2>Keep to the left</h2>
+
+
+
+<p>Go programs are traditionally written in a style that favours guard clauses and preconditions. This encourages the successful path to proceed down the page rather than indented inside a conditional block. Mat Ryer calls this <a href="https://medium.com/@matryer/line-of-sight-in-code-186dd7cdea88">line of sight coding</a>, because, the active part of your function is not at risk of sliding out of sight beyond the right hand margin of your screen.</p>
+
+
+
+<p>By keeping conditional blocks short, and for the exceptional condition, we avoid nested blocks and potentially complex value shadowing. The successful flow of control continues down the page. At every point in the sequence of statements, if you’ve arrived at that point, you are confident that a growing set of preconditions holds true. </p>
+
+
+
+<pre class="wp-block-preformatted">func ReadConfig(path string) (*Config, error) {
+ &nbsp; &nbsp; &nbsp;  f, err := os.Open(path)
+        if err != nil {
+                return nil, err
+        }
+        defer f.Close()
+ &nbsp; &nbsp; &nbsp; &nbsp;// ...
+ } </pre>
+
+
+
+<p>The canonical example of this is the classic Go error check idiom; <code>if err != nil</code> then return it to the caller, else continue with the function. We can generalise this pattern a little and in pseudocode we have:</p>
+
+
+
+<pre class="wp-block-preformatted">if <em>some condition</em> {
+        // true: cleanup
+        return
+ }
+ // false: continue </pre>
+
+
+
+<p>If<em> some condition</em> is true, then return to the caller, else continue onwards towards the end of the function.&nbsp;</p>
+
+
+
+<p>This form holds true for all preconditions, error checks, map lookups, length checks, and so forth. The exact form of the precondition’s check changes, but the pattern is always the same; the cleanup code is inside the block, terminating with a return, the success condition lies outside the block, and is only reachable if the precondition is false.</p>
+
+
+
+<p>Even if you are unsure what the preceding and succeeding code does, how the precondition is formed, and how the cleanup code works, it is clear to the reader that this is a guard clause.</p>
+
+
+
+<h2>Structured programming</h2>
+
+
+
+<p>Here we have a <code>comp</code> function that takes two <code>int</code>s and returns an <code>int</code>;</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+        if a &lt; b {
+                return -1
+        }
+        if a &gt; b {
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; return 1
+ &nbsp; &nbsp; &nbsp; &nbsp;}
+ &nbsp; &nbsp; &nbsp; &nbsp;return 0
+} </pre>
+
+
+
+<p>The <code>comp</code> function is written in a similar form to guard clauses from earlier. If <code>a</code> is less than <code>b</code>, the return -1 path is taken. If <code>a</code> is greater than <code>b</code>, the return 1 path is taken. Else, <code>a</code> and <code>b</code> are by induction equal, so the final return 0 path is taken.</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+        if <em>condition A</em> {
+                <em>body</em> A
+        }
+ &nbsp; &nbsp; &nbsp; &nbsp;if <em>condition</em> B {
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <em>body B</em>
+ &nbsp; &nbsp; &nbsp; &nbsp;}
+ &nbsp; &nbsp; &nbsp; &nbsp;return 0
+} </pre>
+
+
+
+<p>The problem with <code>comp</code> as written is, unlike the guard clause, someone maintaining this function has to read all of it. To understand when 0 is returned, the reader has to consult the conditions <em>and the body</em> of each clause. This is reasonable when you&#8217;re dealing with functions which fit on a slide, but in the real world complicated functions&#8211;​the ones we’re paid for our expertise to maintain&#8211;are rarely slide sized, and their conditions and bodies are rarely simple.</p>
+
+
+
+<p>Let’s address the problem of making it clear under which condition 0 will be returned:</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+        if a &lt; b {
+                return -1
+        } else if a &gt; b {
+ &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; return 1
+ &nbsp; &nbsp; &nbsp; &nbsp;} else {
+ &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; return 0
+ &nbsp; &nbsp; &nbsp; &nbsp;}
+} </pre>
+
+
+
+<p>Now, although this code is not what anyone would argue is readable&#8211;​long chains of <code>if else if</code> statements are broadly discouraged in Go&#8211;​it is clearer to the reader that zero is only returned if none of the conditions are met. </p>
+
+
+
+<p>How do we know this? The Go spec declares that each function that returns a value must end in a terminating statement. This means that the body of all conditions must return a value. Thus, this does not compile:</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+&nbsp; &nbsp; &nbsp; &nbsp; if a &gt; b {
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; a = b // does not compile
+&nbsp; &nbsp; &nbsp; &nbsp; } else if a &lt; b {
+  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return 1
+  &nbsp; &nbsp; &nbsp; } else {
+  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return 0
+ &nbsp;&nbsp; &nbsp; &nbsp; }
+}</pre>
+
+
+
+<p>Further, it is now clear to the reader that this code isn’t actually a series of conditions. This is an example of selection. Only one path can be taken regardless of the operation of the condition blocks. Based on the inputs one of -1, 0, or 1 will always be returned.&nbsp;</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+ &nbsp; &nbsp; &nbsp;  if a &lt; b {
+ &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; return -1
+ &nbsp; &nbsp; &nbsp;  } else if a &gt; b {
+ &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; return 1
+ &nbsp; &nbsp; &nbsp;  } else {
+ &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; return 0
+ &nbsp; &nbsp; &nbsp;  }
+} </pre>
+
+
+
+<p>However this code is hard to read as each of the conditions is written differently, the first is a simple <code>if a &lt; b</code>, the second is the unusual <code>else if a &gt; b</code>, and the last conditional is actually unconditional.</p>
+
+
+
+<p>But it turns out there is a statement which we can use to make our intention much clearer to the reader; <code>switch</code>.</p>
+
+
+
+<pre class="wp-block-preformatted">func comp(a, b int) int {
+&nbsp; &nbsp; &nbsp; &nbsp; switch {
+&nbsp; &nbsp; &nbsp; &nbsp; case a &lt; b:
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return -1
+&nbsp; &nbsp; &nbsp; &nbsp; case a &gt; b:
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return 1
+&nbsp; &nbsp; &nbsp; &nbsp; default:
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return 0
+&nbsp; &nbsp; &nbsp; &nbsp; }
+} </pre>
+
+
+
+<p>Now it is clear to the reader that this is a selection. Each of the selection conditions are documented in their own case statement, rather than varying <code>else</code> or <code>else if</code> clauses.</p>
+
+
+
+<p>By moving the default condition inside the switch, the reader only has to consider the cases that match their condition, as none of the cases can fall out of the switch block because of the default clause.<span id='easy-footnote-1-3748' class='easy-footnote-margin-adjust'></span><span class='easy-footnote'><a href='https://dave.cheney.net/2019/07/09/clear-is-better-than-clever#easy-footnote-bottom-1-3748' title='The &lt;code&gt;fallthrough&lt;/code&gt; keyword complicates this analysis, hence the general disapproval of &lt;code&gt;fallthrough&lt;/code&gt; in switch statements.'><sup>1</sup></a></span></p>
+
+
+
+<blockquote class="wp-block-quote"><p>Structured programming submerges <em>structure</em> and emphasises <em>behaviour</em></p><cite><em>–Richard Bircher,&nbsp;</em><a href="https://www.amazon.com/Limits-Software-People-Projects-Perspectives/dp/0201433230"><em>The limits of software</em></a></cite></blockquote>
+
+
+
+<p>I found this quote recently and I think it is apt. My arguments for clarity are in truth arguments intended to emphasise the behaviour of the code, rather than be side tracked by minutiae of the structure itself. Said another way, what is the code trying to do, <em>not how is it is trying to do it</em>.</p>
+
+
+
+<h2>Guiding principles</h2>
+
+
+
+<p>I opened this article with a discussion of readability vs clarity and hinted that there were other principles of well written Go code. It seems fitting to close on a discussion of those other principles.</p>
+
+
+
+<p>Last year <a href="https://www.slideshare.net/bcantrill/platform-values-rust-and-the-implications-for-system-software">Bryan Cantrill gave a wonderful presentation on operating system principles</a>, wherein he highlighted that different operating systems focus on different principles. It is not that they ignore the principles that differ between their competitors, just that when the chips are down, they prioritise a core set. So what is that core set of principles for Go?</p>
+
+
+
+<h3>Clarity</h3>
+
+
+
+<p>If you were going to say readability, hopefully I’ve provided you with an alternative.</p>
+
+
+
+<blockquote class="wp-block-quote"><p>Programs must be written for people to read, and only incidentally for machines to execute.</p><cite><em>–Hal Abelson and Gerald Sussman</em>. <em>Structure and Interpretation of Computer Programs</em> </cite></blockquote>
+
+
+
+<p>Code is read many more times than it is written. A single piece of code will, over its lifetime, be read hundreds, maybe thousands of times. It will be read hundreds or thousands of times because it must be understood. Clarity is important because all software, not just Go programs, is written by people to be read by other people. The fact that software is also consumed by machines is secondary.</p>
+
+
+
+<blockquote class="wp-block-quote"><p>The most important skill for a programmer is the ability to effectively communicate ideas.</p><cite><em>–Gastón Jorquera</em> </cite></blockquote>
+
+
+
+<p>Legal documents are double spaced to aide the reader, but to the layperson that does nothing to help them comprehend what they just read. Readability is a property of how easy it was to read the words on the screen. Clarity, on the other hand, is the answer to the question &#8220;did you understand what you just read?&#8221;.</p>
+
+
+
+<p>If you’re writing a program for yourself, maybe it only has to run once, or you’re the only person who’ll ever see it, then do what ever works for you. But if this is a piece of software that more than one person will contribute to, or that will be used by people over a long enough time that requirements, features, or the environment it runs in may change, then your goal must be for your program to be maintainable.</p>
+
+
+
+<p>The first step towards writing maintainable code is making sure intent of the code is clear.</p>
+
+
+
+<h3>Simplicity</h3>
+
+
+
+<p>The next principle is obviously simplicity. Some might argue the most important principle for any programming language, perhaps the most important principle full stop.</p>
+
+
+
+<p>Why should we strive for simplicity? Why is important that Go programs be simple?</p>
+
+
+
+<blockquote class="wp-block-quote"><p>The ability to simplify means to eliminate the unnecessary so that the necessary may speak</p><cite><em>–Hans Hofmann</em> </cite></blockquote>
+
+
+
+<p>We’ve all been in a situation where we say &#8220;I can’t understand this code&#8221;. We’ve all worked on programs we were scared to make a change because we worried that it’ll break another part of the program; a part you don’t understand and don’t know how to fix.&nbsp;</p>
+
+
+
+<p>This is complexity. Complexity turns reliable software in unreliable software. Complexity is what leads to unmaintainable software. Complexity is what kills software projects. Clarity and simplicity are interlocking forces that lead to maintainable software.</p>
+
+
+
+<h3>Productivity</h3>
+
+
+
+<p>The last Go principle I want to highlight is productivity. Developer productivity boils down to this; how much time do you spend doing useful work verses waiting for your tools or hopelessly lost in a foreign code-base? Go programmers should feel that they can get a lot done with Go.</p>
+
+
+
+<blockquote class="wp-block-quote"><p>“I&nbsp;started another compilation, turned my chair around to face Robert, and started asking pointed questions. Before the compilation was done, we&#8217;d roped Ken in and had decided to do something.”</p><cite><em>–Rob Pike, <a href="https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html">Less is Exponentially more</a></em><a href="https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html"> </a></cite></blockquote>
+
+
+
+<p>The joke goes that Go was designed while waiting for a C++ program to compile. Fast compilation is a key feature of Go and a key recruiting tool to attract new developers. While compilation speed remains a constant battleground, it is fair to say that compilations which take minutes in other languages, take seconds in Go. This helps Go developers feel as productive as their counterparts working in dynamic languages without the maintenance issues inherent in those languages.</p>
+
+
+
+<blockquote class="wp-block-quote"><p>Design is the art of arranging code to work <em>today</em>, and be changeable&nbsp; <em>forever.</em></p><cite><em>–Sandi Metz</em> </cite></blockquote>
+
+
+
+<p>More fundamental to the question of developer productivity, Go programmers realise that code is written to be read and so place the act of reading code above the act of writing it. Go goes so far as to enforce, via tooling and custom, that all code be formatted in a specific style. This removes the friction of learning a project specific dialect and helps spot mistakes because they just look incorrect.</p>
+
+
+
+<p>Go programmers don’t spend days debugging inscrutable compile errors. They don’t waste days with complicated build scripts or deploying code to production. And most importantly they don’t spend their time trying to understand what their coworker wrote.</p>
+
+
+
+<blockquote class="wp-block-quote"><p>Complexity is anything that makes software hard to understand or to modify.</p><cite><em>–John Ousterhout</em>, <a href="https://www.amazon.com/Philosophy-Software-Design-John-Ousterhout/dp/1732102201/ref=sr_1_3?ie=UTF8&amp;qid=1524677319&amp;sr=8-3&amp;keywords=john+ousterhout">A Philosophy of Software Design</a></cite></blockquote>
+
+
+
+<p>Something I know about each of you reading this post is you will eventually leave your current employer. Maybe you’ll be moving on to a new role, or perhaps a promotion, perhaps you’ll move cities, or follow your partner overseas. Whatever the reason, we must all consider the succession of the maintainership of the programs we create.</p>
+
+
+
+<p>If we strive to write programs that are clear, programs that are simple, and to focus on the productivity of those working with us that will set all Go programmers in good stead.</p>
+
+
+
+<p>Because if we don’t, as we move from job to job, we’ll leave behind programs which cannot be maintained. Programs which cannot be changed. Programs which are too hard to onboard new developers, and programs which feel like career digression for those that work on them.</p>
+
+
+
+<p>If software cannot be maintained, then it will be rewritten; and that could be the last time your company invests in Go.</p>

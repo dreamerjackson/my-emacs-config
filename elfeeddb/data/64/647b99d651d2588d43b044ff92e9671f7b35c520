@@ -1,0 +1,102 @@
+
+<p>In previous posts and presentations I talked about <a href="https://dave.cheney.net/2019/05/07/prefer-table-driven-tests">how to test</a>, and <a href="https://dave.cheney.net/paste/absolute-unit-test-london-gophers.pdf">when to test</a>. To conclude this series of I&#8217;m going to ask the question, <em>why test at all?</em></p>
+
+
+
+<h2>Even if you don’t, someone <em>will</em> test your software</h2>
+
+
+
+<p>I’m sure no-one reading this post thinks that software should be delivered without being tested first. Even if that were true, your customers are going to test it, or at least use it. If nothing else, it would be good to discover any issues with the code before your customers do. If not for the reputation of your company, at least for your professional pride.</p>
+
+
+
+<p>So, if we agree that software should be tested, the question becomes: <em>who</em> should do that testing?</p>
+
+
+
+<h2>The majority of testing should be performed by development teams</h2>
+
+
+
+<p>I argue that the majority of the testing should be done by development groups. Moreover, testing should be automated, and thus the majority of these tests should be unit style tests.</p>
+
+
+
+<p>To be clear, I am <em>not</em> saying you shouldn’t write integration, functional, or end to end tests. I&#8217;m also <em>not</em> saying that you shouldn’t have a QA group, or integration test engineers. However at a recent software conference, in a room of over 1,000 engineers, nobody raised their hand when I asked if they considered themselves in a pure quality assurance role. </p>
+
+
+
+<p>You might argue that the audience was self selecting, that QA engineers did not feel a software conference was relevant&#8211;or welcoming&#8211;to them. However, I think this proves my point, the days of <a href="https://docs.microsoft.com/en-us/azure/devops/learn/devops-at-microsoft/evolving-test-practices-microsoft">one developer to one test engineer</a> are gone and not coming back.</p>
+
+
+
+<p>If development teams aren&#8217;t writing the majority of tests, who is?</p>
+
+
+
+<h2>Manual testing should not be the majority of your testing because manual testing is O(n)</h2>
+
+
+
+<p>Thus, if individual contributors are expected to test the software they write, why do we need to automate it? Why is a manual testing plan not good enough?</p>
+
+
+
+<p>Manual testing of software or manual verification of a defect is not sufficient because it does not scale. As the number of manual tests grows, engineers are tempted to skip them or only execute the scenarios they <em>think</em> are could be affected. Manual testing is expensive in terms of time, thus dollars, and it is boring. 99.9% of the tests that passed last time are <em>expected</em> to pass again. Manual testing is looking for a needle in a haystack, except you don&#8217;t stop when you find the first needle.</p>
+
+
+
+<p>This means that your first response when given a bug to fix or a feature to implement should be to write a failing test. This doesn’t need to be a unit test, but it should be an automated test. Once you’ve fixed the bug, or added the feature, now have the test case to prove it worked&#8211;and you can check them in together.</p>
+
+
+
+<h2>Tests are the critical component that ensure you can always ship your master branch</h2>
+
+
+
+<p>As a development team, you are judged on your ability to deliver working software to the business. No, seriously, the business could care less about OOP vs FP, CI/CD, table tennis or limited run La Croix.</p>
+
+
+
+<p>Your super power is, at any time, anyone on the team should be confident that the master branch of your code is shippable. This means at any time they can deliver a release of your software to the business and the business can recoup its investment in your development R&amp;D.</p>
+
+
+
+<p>I cannot emphasise this enough. If you want the non technical parts of the business to believe you are heros, you must never create a situation where you say  “well, we can’t release right now because we’re in the middle of an important refactoring. It&#8217;ll be a few weeks. We hope.”</p>
+
+
+
+<p>Again, I’m not saying you cannot refactor, but at every stage your product must be shippable. Your tests have to pass. It may not have all the desired features, but the features that are there should work as described on the tin.</p>
+
+
+
+<h2>Tests lock in behaviour</h2>
+
+
+
+<p>Your tests are the contract about what your software does and does not do. Unit tests should lock in the behaviour of the package’s API. Integration tests do the same for complex interactions. Tests describe, in code, what the program promises to do.</p>
+
+
+
+<p>If there is a unit test for each input permutation, you have defined the contract for what the code will do&nbsp;<em>in code</em>, not documentation. This is a contract anyone on your team can assert by simply running the tests. At any stage you <em>know</em> with a high degree of confidence that the behaviour people relied on before your change continues to function after your change.</p>
+
+
+
+<h2>Tests give you confidence to change someone else’s code</h2>
+
+
+
+<p>Lastly, and this is the biggest one, for programmers working on a piece of code that has been through many hands. Tests give you the confidence to make changes.</p>
+
+
+
+<p>Even though we&#8217;ve never met, something I know about you, the reader, is you will eventually leave your current employer. Maybe you’ll be moving on to a new role, or perhaps a promotion, perhaps you’ll move cities, or follow your partner overseas. Whatever the reason, the succession of the maintenance of programs you write is key.</p>
+
+
+
+<p>If people cannot maintain our code then as you and I move from job to job we’ll leave behind programs which cannot be maintained. This goes beyond advocacy for a language or tool. Programs which cannot be changed, programs which are too hard to onboard new developers, or programs which feel like career digression to work on them will reach only one end state&#8211;they are a dead end. They represent a balance sheet loss for the business. They will be replaced.</p>
+
+
+
+<p>If you worry about who will maintain your code after you&#8217;re gone, write good tests.</p>

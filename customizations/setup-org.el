@@ -124,6 +124,7 @@
                              "~/my-note-project/thinking.org"
                              "~/my-note-project/study.org"
                              "~/my-note-project/career.org"
+                              "~/my-note-project/life.org"
                                 ;;"~/my-note-project/gcal.org"
                                 ;; "~/my-note-project/soe-cal.org"
                                 ;; "~/my-note-project/i.org"

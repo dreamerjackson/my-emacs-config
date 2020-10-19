@@ -1,0 +1,114 @@
+
+<p>Go 2 aims to improve the overhead of <a href="https://go.googlesource.com/proposal/+/master/design/go2draft-error-handling-overview.md">error handling</a>, but do you know what is better than an improved syntax for handling errors? Not needing to handle errors at all. Now, I’m not saying &#8220;delete your error handling code&#8221;, instead I&#8217;m suggesting changing your code so you don&#8217;t have as many errors to handle.</p>
+
+
+
+<p>This article draws inspiration from a chapter in John Ousterhout’s, <em><a href="https://www.amazon.com/Philosophy-Software-Design-John-Ousterhout/dp/1732102201">A philosophy of Software Design,</a></em> &#8220;Define Errors Out of Existence&#8221;. I&#8217;m going to try to apply his advice to Go.</p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>Here&#8217;s a function to count the number of lines in a file,</p>
+
+
+
+<pre class="wp-block-preformatted">func CountLines(r io.Reader) (int, error) {<br>        var (<br>                br    = bufio.NewReader(r)<br>                lines int<br>                err   error<br>        )<br><br>        for {<br>                _, err = br.ReadString('\n')<br>                lines++<br>                if err != nil {<br>                        break<br>                }<br>        }<br><br>        if err != io.EOF {<br>                return 0, err<br>        }<br>        return lines, nil<br> }</pre>
+
+
+
+<p>We construct a&nbsp;<code>bufio.Reader</code>, then sit in a loop calling the&nbsp;<code>ReadString</code>&nbsp;method, incrementing a counter until we reach the end of the file, then we return the number of lines read. That’s the code we <em>wanted</em> to write, instead <code>CountLines</code> is made more complicated by its error handling. For example, there is this strange construction:</p>
+
+
+
+<pre class="wp-block-preformatted">                _, err = br.ReadString('\n')<br>                lines++<br>                if err != nil {<br>                        break<br>                }</pre>
+
+
+
+<p>We increment the count of lines&nbsp;<em>before</em>&nbsp;checking the error—​that looks odd. The reason we have to write it this way is&nbsp;<code>ReadString</code>&nbsp;will return an error if it encounters an end-of-file—<code>io.EOF</code>—before hitting a newline character. This can happen if there is no trailing newline. </p>
+
+
+
+<p>To address this problem, we rearrange the logic to increment the line count, then see if we need to exit the loop.<span id='easy-footnote-1-3547' class='easy-footnote-margin-adjust'></span><span class='easy-footnote'><a href='https://dave.cheney.net/2019/01/27/eliminate-error-handling-by-eliminating-errors#easy-footnote-bottom-1-3547' title='This logic &lt;em&gt;still&lt;/em&gt; isn&amp;#8217;t correct, can you spot the bug?'><sup>1</sup></a></span></p>
+
+
+
+<p>But we’re not done checking errors yet.&nbsp;<code>ReadString</code>&nbsp;will return&nbsp;<code>io.EOF</code>&nbsp;when it hits the end of the file. This is expected,&nbsp;<code>ReadString</code>&nbsp;needs some way of saying&nbsp;<em>stop, there is nothing more to read</em>. So before we return the error to the caller of&nbsp;<code>CountLine</code>, we need to check if the error was&nbsp;<em>not</em>&nbsp;<code>io.EOF</code>, and in that case propagate it up, otherwise we return&nbsp;<code>nil</code>&nbsp;to say that everything worked fine. This is why the final line of the function is not simply</p>
+
+
+
+<pre class="wp-block-preformatted">return lines, err</pre>
+
+
+
+<p>I think this is a good example of Russ Cox’s<a href="https://www.youtube.com/watch?v=6wIP3rO6On8"> observation that error handling can obscure the operation of the function</a>. Let’s look at an improved version.</p>
+
+
+
+<pre class="wp-block-preformatted">func CountLines(r io.Reader) (int, error) {<br>        sc := bufio.NewScanner(r)<br>        lines := 0<br><br>        for sc.Scan() {<br>                lines++<br>        }<br><br>        return lines, sc.Err()<br>}</pre>
+
+
+
+<p>This improved version switches from using&nbsp;<code>bufio.Reader</code>&nbsp;to&nbsp;<code>bufio.Scanner</code>. Under the hood&nbsp;<code>bufio.Scanner</code>&nbsp;uses&nbsp;<code>bufio.Reader</code> adding a layer of abstraction which helps remove the error handling which obscured the operation of&nbsp;our previous version of <code>CountLines</code> <span id='easy-footnote-2-3547' class='easy-footnote-margin-adjust'></span><span class='easy-footnote'><a href='https://dave.cheney.net/2019/01/27/eliminate-error-handling-by-eliminating-errors#easy-footnote-bottom-2-3547' title='&lt;code&gt;bufio.Scanner&lt;/code&gt;&amp;nbsp;can scan for any pattern, by default it looks for newlines.'><sup>2</sup></a></span></p>
+
+
+
+<p>The method&nbsp;<code>sc.Scan()</code>&nbsp;returns&nbsp;<code>true</code>&nbsp;if the scanner&nbsp;<em>has</em>&nbsp;matched a line of text and&nbsp;<em>has not</em>&nbsp;encountered an error. So, the body of our&nbsp;<code>for</code>&nbsp;loop will be called only when there is a line of text in the scanner’s buffer. This means our revised&nbsp;<code>CountLines</code>&nbsp;correctly handles the case where there is no trailing newline, It also correctly handles the case where the file is empty.</p>
+
+
+
+<p>Secondly, as&nbsp;<code>sc.Scan</code>&nbsp;returns&nbsp;<code>false</code>&nbsp;once an error is encountered, our&nbsp;<code>for</code>&nbsp;loop will exit when the end-of-file is reached or an error is encountered. The&nbsp;<code>bufio.Scanner</code>&nbsp;type memoises the first error it encounters and we recover that error once we’ve exited the loop using the&nbsp;<code>sc.Err()</code>&nbsp;method.</p>
+
+
+
+<p>Lastly,&nbsp;<code>buffo.Scanner</code>&nbsp;takes care of handling&nbsp;<code>io.EOF</code>&nbsp;and will convert it to a&nbsp;<code>nil</code>&nbsp;if the end of file was reached without encountering another error.<br></p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>My second example is inspired by Rob Pikes&#8217;&nbsp;<em><a href="https://blog.golang.org/errors-are-values">Errors are values</a></em>&nbsp;blog post.</p>
+
+
+
+<p>When dealing with opening, writing and closing files, the error handling is present but not overwhelming as, the operations can be encapsulated in helpers like&nbsp;<code>ioutil.ReadFile</code>&nbsp;and&nbsp;<code>ioutil.WriteFile</code>. However, when dealing with low level network protocols it often becomes necessary to build the response directly using I/O primitives, thus the error handling can become repetitive. Consider this fragment of a HTTP server which is constructing a HTTP/1.1 response.</p>
+
+
+
+<pre class="wp-block-preformatted">type Header struct {<br>        Key, Value string<br>}<br><br>type Status struct {<br>        Code   int<br>        Reason string<br>}<br><br>func WriteResponse(w io.Writer, st Status, headers []Header, body io.Reader) error {<br>        _, err := fmt.Fprintf(w, "HTTP/1.1 %d %s\r\n", st.Code, st.Reason)<br>        if err != nil {<br>                return err<br>        }<br>        <br>        for _, h := range headers {<br>                _, err := fmt.Fprintf(w, "%s: %s\r\n", h.Key, h.Value)<br>                if err != nil {<br>                        return err<br>                }<br>        }<br><br>        if _, err := fmt.Fprint(w, "\r\n"); err != nil {<br>                return err<br>        } <br><br>        _, err = io.Copy(w, body) <br>        return err<br>}</pre>
+
+
+
+<p>First we construct the status line using&nbsp;<code>fmt.Fprintf</code>, and check the error. Then for each header we write the header key and value, checking the error each time. Lastly we terminate the header section with an additional&nbsp;<code>\r\n</code>, check the error, and copy the response body to the client. Finally, although we don’t need to check the error from&nbsp;<code>io.Copy</code>, we do need to translate it from the two return value form that&nbsp;<code>io.Copy</code>&nbsp;returns into the single return value that&nbsp;<code>WriteResponse</code> expects.</p>
+
+
+
+<p>Not only is this a lot of repetitive work, each operation—fundamentally writing bytes to an <code>io.Writer</code>—has a different form of error handling. But we can make it easier on ourselves by introducing a small wrapper type.</p>
+
+
+
+<pre class="wp-block-preformatted">type errWriter struct {<br>        io.Writer<br>        err error<br>}<br><br>func (e *errWriter) Write(buf []byte) (int, error) {<br>        if e.err != nil {<br>                return 0, e.err<br>        }<br><br>        var n int<br>        n, e.err = e.Writer.Write(buf)<br>        return n, nil<br>}</pre>
+
+
+
+<p><code>errWriter</code>&nbsp;fulfils the&nbsp;<code>io.Writer</code>&nbsp;contract so it can be used to wrap an existing&nbsp;<code>io.Writer</code>.&nbsp;<code>errWriter</code>&nbsp;passes writes through to its underlying writer until an error is detected. From that point on, it discards any writes and returns the previous error.</p>
+
+
+
+<pre class="wp-block-preformatted">func WriteResponse(w io.Writer, st Status, headers []Header, body io.Reader) error {<br>        ew := &amp;errWriter{Writer: w} <br>        fmt.Fprintf(ew, "HTTP/1.1 %d %s\r\n", st.Code, st.Reason)<br><br>        for _, h := range headers {<br>                fmt.Fprintf(ew, "%s: %s\r\n", h.Key, h.Value)<br>        }<br><br>        fmt.Fprint(ew, "\r\n")<br>        io.Copy(ew, body)<br><br>        return ew.err<br>}</pre>
+
+
+
+<p>Applying&nbsp;<code>errWriter</code>&nbsp;to&nbsp;<code>WriteResponse</code>&nbsp;dramatically improves the clarity of the code. Each of the operations no longer needs to bracket itself with an error check. Reporting the error is moved to the end of the function by inspecting the&nbsp;<code>ew.err</code>&nbsp;field, avoiding the annoying translation from <code>io.Copy</code>’s return values.</p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>When you find yourself faced with overbearing error handling, try to extract some of the operations into a helper type.</p>

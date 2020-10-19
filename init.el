@@ -58,7 +58,7 @@
 (use-package bind-key :ensure t)
 
 (use-package auto-package-update
-  :ensure t
+  :ensure nil
   :config
   (setq auto-package-update-delete-old-versions t)
   (setq auto-package-update-hide-results t)

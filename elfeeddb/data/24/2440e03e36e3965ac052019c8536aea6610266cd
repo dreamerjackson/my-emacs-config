@@ -1,0 +1,50 @@
+
+<p>The open source projects that I contribute to follow a philosophy which I describe as <em>talk,&nbsp;then&nbsp;code</em>. I think this is generally a good way to develop software and I want to spend a little time talking about the benefits of this methodology.</p>
+
+
+
+<h3>Avoiding hurt feelings</h3>
+
+
+
+<p>The most important reason for discussing the change you want to make is it avoids hurt feelings. Often I see a contributor work hard in isolation on a pull request only to find their work is rejected. This can be for a bunch of reasons; the PR is too large, the PR doesn&#8217;t follow the local style, the PR fixes an issue which wasn&#8217;t important to the project or was recently fixed indirectly, and many more.</p>
+
+
+
+<p>The underlying cause of all these issues is a lack of communication. The goal of the <em>talk,&nbsp;then&nbsp;code</em> philosophy is not to impede or frustrate, but to ensure that a feature lands correctly the first time, without incurring significant maintenance debt, and neither the author of the change, or the reviewer, has to carry the emotional burden of dealing with hurt feelings when a change appears out of the blue with an implicit &#8220;well, I&#8217;ve done the work, all you have to do is merge it, right?&#8221;</p>
+
+
+
+<h3>What does discussion look like?</h3>
+
+
+
+<p>Every new feature or bug fix should be discussed with the maintainer(s) of the project before work commences. It&#8217;s fine to experiment privately, but do not send a change without discussing it first. </p>
+
+
+
+<p>The definition of <em>talk</em> for simple changes can be as little as a design sketch in a GitHub issue. If your PR fixes a bug, you should link to the bug it fixes. If there isn&#8217;t one, you should raise a bug and wait for the maintainers to acknowledge it before sending a PR. This might seem a little backward&#8211;who wouldn&#8217;t want a bug fixed&#8211;but consider the bug could be a misunderstanding in how the software works or it could be a symptom of a larger problem that needs further investigation.</p>
+
+
+
+<p>For more complicated changes, especially feature requests, I recommend that a design document be circulated and agreed upon before sending code. This doesn&#8217;t have to be a full blown document, a sketch in an issue may be sufficient, but the key is to reach agreement using words, before locking it in stone with code.</p>
+
+
+
+<p>In all cases you shouldn&#8217;t proceed to send code until there is a positive agreement from the maintainer that the approach is one they are happy with. A pull request is for life, not just for Christmas.</p>
+
+
+
+<h3>Code review, not design by committee</h3>
+
+
+
+<p>A code review is not the place for arguments about design. This is for two reasons. First, most code review tools are not suitable for long comment threads, GitHub&#8217;s PR interface is very bad at this, Gerrit is better, but few have a team of admins to maintain a Gerrit instance. More importantly, disagreements at the code review stage suggests there wasn&#8217;t agreement on how the change should be implemented.</p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>Talk about what you want to code, then code what you talked about. Please don&#8217;t do it the other way around.</p>

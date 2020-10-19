@@ -1,0 +1,59 @@
+
+<p>This is a post about performance. Most of the time when worrying about the performance of a piece of code the overwhelming advice should be (with apologies to Brendan Gregg) <em>don&#8217;t worry about it, yet.</em> However there is one area where I counsel developers to think about the performance implications of a design, and that is API design.</p>
+
+
+
+<p>Because of the high cost of retrofitting a change to an API&#8217;s signature to address performance concerns, it&#8217;s worthwhile considering the performance implications of your API&#8217;s design on its caller.</p>
+
+
+
+<h2>A tale of two API designs</h2>
+
+
+
+<p>Consider these two <code>Read</code> methods:</p>
+
+
+
+<pre class="wp-block-preformatted">func (r *Reader) Read(buf []byte) (int, error)
+func (r *Reader) Read() ([]byte, error)</pre>
+
+
+
+<p>The first method takes a <code>[]byte</code> buffer and returns the number of bytes read into that buffer and possibly an <code>error</code> that occurred while reading. The second takes no arguments and returns some data as a <code>[]byte</code> or an <code>error</code>. </p>
+
+
+
+<p>This first method should be familiar to any Go programmer, it&#8217;s <code><a href="https://golang.org/pkg/io/#Reader">io.Reader.Read</a></code>. As ubiquitous as <code>io.Reader</code> is, it&#8217;s not the most convenient API to use. Consider for a moment that <code>io.Reader</code> is the only Go interface in widespread use that returns <em>both</em> a result <em>and</em> an error. Meditate on this for a moment. The standard Go idiom, checking the error and iff it is <code>nil</code> is it safe to consult the other return values, does not apply to <code>Read</code>. In fact the caller must do the opposite. First they must record the number of bytes read into the buffer, reslice the buffer, process that data, and only then, consult the error. This is an unusual API for such a common operation and one that frequently catches out newcomers. </p>
+
+
+
+<h2>A trap for young players?</h2>
+
+
+
+<p>Why is it so? Why is one of the central APIs in Go&#8217;s standard library written like this? A superficial answer might be <code>io.Reader</code>&#8216;s signature is a reflection of the underlying <code><a href="http://man7.org/linux/man-pages/man2/read.2.html">read(2)</a></code> syscall, which is indeed true, but misses the point of this post.</p>
+
+
+
+<p>If we compare the API of <code>io.Reader</code> to our alternative, <code>func Read() ([]byte, error)</code>, this API seems easier to use. Each call to <code>Read()</code> will return the data that was read, no need to reslice buffers, no need to remember the special case to do this before checking the error. Yet this is not the signature of <code>io.Reader.Read</code>. Why would one of Go&#8217;s most pervasive interfaces choose such an awkward API? The answer, I believe, lies in the performance implications of the APIs signature on the <em>caller</em>.</p>
+
+
+
+<p>Consider again our alternative <code>Read</code> function, <code>func Read() ([]byte, error)</code>. On each call <code>Read</code> will read some data into a buffer<span id='easy-footnote-1-3821' class='easy-footnote-margin-adjust'></span><span class='easy-footnote'><a href='https://dave.cheney.net/2019/09/05/dont-force-allocations-on-the-callers-of-your-api#easy-footnote-bottom-1-3821' title='This API has other problems, such as, &lt;em&gt;how much data should be read?&lt;/em&gt; or &lt;em&gt;should it try to read as much as possible, or return promptly if the read would block?&lt;/em&gt;'><sup>1</sup></a></span> and return the buffer to the caller. Where does this buffer come from? Who allocates it? The answer is the buffer is allocated <em>inside</em> <code>Read</code>. Therefore each call to <code>Read</code> is guaranteed to allocate a buffer which would escape to the heap. The more the program reads, the faster it reads data, the more streams of data it reads concurrently, the more pressure it places on the garbage collector.</p>
+
+
+
+<p>The standard libraries&#8217; <code>io.Reader.Read</code> forces the caller to supply a buffer because if the caller is concerned with the number of allocations their program is making this is precisely the kind of thing they want to control. Passing a buffer into <code>Read</code> puts the control of the allocations into the caller&#8217;s hands. If they aren&#8217;t concerned about allocations they can use higher level helpers like <code><a href="https://golang.org/pkg/io/ioutil/#ReadAll">ioutil.ReadAll</a></code> to read the contents into a <code>[]byte</code>, or <code><a href="https://golang.org/pkg/bufio/#Scanner">bufio.Scanner</a></code> to stream the contents instead.</p>
+
+
+
+<p>The opposite, starting with a method like our alternative <code>func Read() ([]byte, error)</code> API, prevents callers from pooling or reusing allocations&#8211;no amount of helper methods can fix this. As an API author, if the API cannot be changed you&#8217;ll be forced to add a second form to your API taking a supplied buffer and reimplementing your original API in terms of the newer form. Consider, for example, <code><a href="https://golang.org/src/io/io.go?s=13136:13214#L378">io.CopyBuffer</a></code>. Other examples of retrofitting APIs for performance reasons are the <code><a href="https://golang.org/cl/43990043">fmt</a></code><a href="https://golang.org/cl/43990043"> package</a> and the <code><a href="https://golang.org/cl/44080043">net/http</a></code><a href="https://golang.org/cl/44080043"> package</a> which drove the introduction of the <code>sync.Pool</code> type precisely because the Go 1 guarantee prevented the APIs of those packages from changing.</p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>If you want to commit to an API for the long run, consider how its design will impact the size and frequency of allocations the caller will have to make to use it.</p>

@@ -1,0 +1,70 @@
+
+<blockquote class="wp-block-quote is-style-large"><p>APIs should be easy to use and hard to misuse.</p><cite>— Josh Bloch</cite></blockquote>
+
+
+
+<p>A good example of a simple looking, but hard to use correctly, API is one which takes two or more parameters of the same type. Let’s compare two function signatures:</p>
+
+
+
+<pre class="wp-block-code"><code>func Max(a, b int) int
+func CopyFile(to, from string) error</code></pre>
+
+
+
+<p>What’s the difference between these functions? Obviously one returns the maximum of two numbers, the other copies a file, but that’s not the important thing.</p>
+
+
+
+<pre class="wp-block-code"><code>Max(8, 10) // 10
+Max(10, 8) // 10</code></pre>
+
+
+
+<p><code>Max</code> is&nbsp;<em>commutative</em>; the order of its parameters does not matter. The maximum of eight and ten is ten regardless of if I compare eight and ten or ten and eight.</p>
+
+
+
+<p>However, this property does not hold true for&nbsp;<code>CopyFile</code>.</p>
+
+
+
+<pre class="wp-block-code"><code>CopyFile("/tmp/backup", "presentation.md")
+CopyFile("presentation.md", "/tmp/backup")</code></pre>
+
+
+
+<p>Which one of these statements made a backup of your presentation and which one overwrite your presentation with last week’s version? You can’t tell without consulting the documentation. A code reviewer cannot know if you’ve got the order correct without consulting the documentation.</p>
+
+
+
+<p>The general advice is to try to avoid this situation. Just like long parameter lists, indistinct parameter lists are a design smell.</p>
+
+
+
+<h2>A challenge</h2>
+
+
+
+<p>When this situation is unavoidable my solution to this class of problem is to introduce a helper type which will be responsible for calling <code>CopyFile</code> correctly.</p>
+
+
+
+<pre class="wp-block-code"><code>type Source string
+
+func (src Source) CopyTo(dest string) error {
+	return CopyFile(dest, string(src))
+}
+
+func main() {
+	var from Source = "presentation.md"
+	from.CopyTo("/tmp/backup")
+}</code></pre>
+
+
+
+<p>In this way <code>CopyFile</code> is always called correctly and, given its poor API can possibly be made private, further reducing the likelihood of misuse.</p>
+
+
+
+<p>Can you suggest a better solution?</p>

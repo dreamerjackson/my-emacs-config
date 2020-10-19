@@ -20,6 +20,10 @@
               ("M-j" . pop-tag-mark)
               ("M-k" . godef-jump)))
 
+  (use-package go-guru
+    :ensure t
+    :hook (go-mode . go-guru-hl-identifier-mode)
+    )
 (use-package go-errcheck
   :after go-mode
   :ensure-system-package (errcheck . "go get -u github.com/kisielk/errcheck")

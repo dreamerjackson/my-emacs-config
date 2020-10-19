@@ -1,0 +1,206 @@
+
+<p>This is a thought experiment in API design. It starts with the classic Go unit testing idiom:</p>
+
+
+
+<pre class="wp-block-preformatted">func TestOpenFile(t *testing.T) {
+        f, err := os.Open("notfound")
+        if err != nil {
+                t.Fatal(err)
+        }
+
+        // ...
+}</pre>
+
+
+
+<p>What&#8217;s the problem with this code? The assertion. <code>if err != nil { ... }</code> is repetitive and in the case where multiple conditions need to be checked, somewhat error prone if the author of the test uses <code>t.Error</code> not <code>t.Fatal</code>, eg:</p>
+
+
+
+<pre class="wp-block-preformatted">        f, err := os.Open("notfound")
+        if err != nil {
+                t.Error(err)
+        }
+        f.Close() // boom!</pre>
+
+
+
+<p>What&#8217;s the solution? DRY it up, of course, by moving the repetitive assertion logic to a helper:</p>
+
+
+
+<pre class="wp-block-preformatted">func TestOpenFile(t *testing.T) {
+ &nbsp; &nbsp; &nbsp;  f, err := os.Open("notfound")
+ &nbsp; &nbsp; &nbsp;  check(t, err)
+
+  &nbsp; &nbsp; &nbsp; // ...
+}
+ 
+func check(t *testing.T, err error) {
+ &nbsp; &nbsp; &nbsp; if err != nil {
+ &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; t.Helper()
+ &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; t.Fatal(err)
+ &nbsp; &nbsp;&nbsp; &nbsp; }
+}</pre>
+
+
+
+<p>Using the <code>check</code> helper the code is a little cleaner, and clearer, <em>check the error</em>, and hopefully the indecision between <code>t.Error</code> and <code>t.Fatal</code> has been solved. The downside of abstracting the assertion to a helper function is now you need to pass a <code>testing.T</code> into <em>each and every invocation</em>. Worse, you need to pass a <code>*testing.T</code> to everything that needs to call <code>check</code>, transitively, just in case.</p>
+
+
+
+<p>This is ok, I guess, but I will make the observation that the <code>t</code> variable is only needed <em>when the assertion fails</em> &#8212; and even in a testing scenario, most of the time, most of the tests pass, so that means reading, and writing, all these <code>t</code>&#8216;s is a constant overhead for the relatively rare occasion that a test fails.</p>
+
+
+
+<p>What about if we did something like this instead?</p>
+
+
+
+<pre class="wp-block-preformatted">func TestOpenFile(t *testing.T) {
+ &nbsp; &nbsp; &nbsp;  f, err := os.Open("notfound")
+ &nbsp; &nbsp; &nbsp;&nbsp; check(err)
+ 
+ &nbsp; &nbsp;  &nbsp; // ...
+}
+ 
+func check(err error) {
+&nbsp; &nbsp; &nbsp; &nbsp; if err != nil {
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; panic(err.Error())
+&nbsp; &nbsp; &nbsp; &nbsp; }
+}</pre>
+
+
+
+<p>Yeah, that&#8217;ll work, but it has a few problems</p>
+
+
+
+<pre class="wp-block-preformatted">% <strong>go test</strong>
+--- FAIL: TestOpenFile (0.00s)
+panic: open notfound: no such file or directory [recovered]
+&nbsp; &nbsp; &nbsp; &nbsp; panic: open notfound: no such file or directory
+
+goroutine 22 [running]:
+testing.tRunner.func1(0xc0000b4400)
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/go/src/testing/testing.go:874 +0x3a3
+panic(0x111b040, 0xc0000866f0)
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/go/src/runtime/panic.go:679 +0x1b2
+github.com/pkg/expect_test.check(...)
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/src/github.com/pkg/expect/expect_test.go:18
+github.com/pkg/expect_test.TestOpenFile(0xc0000b4400)
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/src/github.com/pkg/expect/expect_test.go:10 +0xa1
+testing.tRunner(0xc0000b4400, 0x115ac90)
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/go/src/testing/testing.go:909 +0xc9
+created by testing.(*T).Run
+&nbsp; &nbsp; &nbsp; &nbsp; /Users/dfc/go/src/testing/testing.go:960 +0x350
+exit status 2</pre>
+
+
+
+<p>Let&#8217;s start with the good; we didn&#8217;t have to pass a <code>testing.T</code> every place we call <code>check</code>, the test fails immediately, and we get a nice message in the panic &#8212; albeit twice. But <em>where</em> the assertion failed is hard to see. It occurred on <code>expect_test.go:11</code> but you&#8217;d be forgiven for not knowing that.</p>
+
+
+
+<p>So <code>panic</code> isn&#8217;t really a good solution, but there&#8217;s something in this stack trace that is &#8212; can you see it? Here&#8217;s a hint, <code>github.com/pkg/expect_test.TestOpenFile(0xc0000b4400)</code>.</p>
+
+
+
+<p><code>TestOpenFile</code> has a <code>t</code> value, it was passed to it by <code>tRunner</code>, so there&#8217;s a <code>testing.T</code> in memory at address <code>0xc0000b4400</code>. What if we could get access to that <code>t</code> inside <code>check</code>? Then we could use it to call <code>t.Helper</code> and <code>t.Fatal</code>. Is that possible?</p>
+
+
+
+<h2>Dynamic scoping</h2>
+
+
+
+<p>What we want is to be able to access a variable whose declaration is neither global, or local to the function, but somewhere higher in the call stack. This is called <em>dynamic scoping</em>. Go doesn&#8217;t support dynamic scoping, but it turns out, for restricted cases, we can fake it. I&#8217;ll skip to the chase:</p>
+
+
+
+<pre class="wp-block-preformatted">// getT returns the address of the testing.T passed to testing.tRunner
+// which called the function which called getT. If testing.tRunner cannot
+// be located in the stack, say if getT is not called from the main test
+// goroutine, getT returns nil.
+func getT() *testing.T {
+&nbsp; &nbsp; &nbsp; &nbsp; var buf [8192]byte
+&nbsp; &nbsp; &nbsp; &nbsp; n := runtime.Stack(buf[:], false)
+&nbsp; &nbsp; &nbsp; &nbsp; sc := bufio.NewScanner(bytes.NewReader(buf[:n]))
+&nbsp; &nbsp; &nbsp; &nbsp; for sc.Scan() {
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; var p uintptr
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; n, _ := fmt.Sscanf(sc.Text(), "testing.tRunner(%v", &amp;p)
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; if n != 1 {
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; continue
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; }
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; return (*testing.T)(unsafe.Pointer(p))
+&nbsp; &nbsp; &nbsp; &nbsp; }
+&nbsp; &nbsp; &nbsp; &nbsp; return nil
+}</pre>
+
+
+
+<p>We know that each <code>Test</code> is called by the <code>testing</code> package in its own goroutine (see the stack trace above). The <code>testing</code> package launches the test via a function called <code>tRunner</code> which takes a <code>*testing.T</code> and a <code>func(*testing.T)</code> to invoke. Thus we grab a stack trace of the current goroutine, scan through it for the line beginning with <code>testing.tRunner</code> &#8212; which can only be the <code>testing</code> package as <code>tRunner</code> is a private function &#8212; and parse the address of the first parameter, which is a pointer to a <code>testing.T</code>. With a little <code>unsafe</code> we convert the raw pointer back to a <code>*testing.T</code> and we&#8217;re done.</p>
+
+
+
+<p>If the search fails then it is likely that <code>getT</code> wasn&#8217;t called from a <code>Test</code>. This is actually ok because the reason we needed the <code>*testing.T</code> was to call <code>t.Fatal</code> and the testing package already requires that <code>t.Fatal</code> be called from the <a href="https://golang.org/pkg/testing/#T.FailNow">main test goroutine</a>.</p>
+
+
+
+<pre class="wp-block-preformatted">import "github.com/pkg/expect"
+
+func TestOpenFile(t *testing.T) {
+&nbsp; &nbsp; &nbsp; &nbsp; f, err := os.Open("notfound")
+&nbsp; &nbsp; &nbsp; &nbsp; expect.Nil(err)
+ 
+&nbsp; &nbsp; &nbsp; &nbsp; // ...
+}</pre>
+
+
+
+<p>Putting it all together we&#8217;ve eliminated the assertion boilerplate and possibly made the expectation of the test a little clearer to read,<em> after opening the file <code>err</code> is expected to be nil</em>.</p>
+
+
+
+<h2>Is this fine?</h2>
+
+
+
+<p>At this point you should be asking, <em>is this fine?</em> And the answer is, no, this is not fine. You should be screaming internally at this point. But it&#8217;s probably worth introspecting those feelings of revulsion.</p>
+
+
+
+<p>Apart from the inherent fragility of scrobbling around in a goroutine&#8217;s call stack, there are some serious design issues:</p>
+
+
+
+<ol><li>The <code>expect.Nil</code>&#8216;s behaviour now depends on <em>who called it</em>. Provided with the same arguments it may have different behaviour depending on where it appears in the call stack &#8212; this is unexpected.</li><li>Taken to the extreme dynamic scoping effective brings into the scope of a single function all the variables passed into any function that preceded it. It is a side channel for passing data in to and out of functions that is not explicitly documented in function declaration.</li></ol>
+
+
+
+<p>Ironically these are precisely the critiques I have of <a href="https://dave.cheney.net/2017/01/26/context-is-for-cancelation"><code>context.Context</code></a>. I&#8217;ll leave it to you to decide if they are justified.</p>
+
+
+
+<h2>A final word</h2>
+
+
+
+<p>This is a bad idea, no argument there. This is not a pattern you should ever use in production code. But, this isn&#8217;t production code, it&#8217;s a test, and perhaps there are different rules that apply to test code. After all, we use mocks, and stubs, and monkey patching, and type assertions, and reflection, and helper functions, and build flags, and global variables, all so we can test our code effectively. None of those, uh, <em>hacks</em> will ever show up in the production code path, so is it really the end of the world?</p>
+
+
+
+<p>If you&#8217;ve read this far perhaps you&#8217;ll agree with me that as unconventional as this approach is, not having to pass a <code>*testing.T</code> into every function that could possibly need to assert something transitively, makes for clearer test code. </p>
+
+
+
+<p>So maybe, in this case, the ends do justify the means.</p>
+
+
+
+<hr class="wp-block-separator"/>
+
+
+
+<p>If you&#8217;re interested, I&#8217;ve put together a <a href="https://github.com/pkg/expect">small assertion library</a> using this pattern. <em>Caveat emptor</em>.</p>

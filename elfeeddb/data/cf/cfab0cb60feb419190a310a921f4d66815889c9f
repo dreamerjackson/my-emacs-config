@@ -1,0 +1,34 @@
+
+<p>Last year I had the opportunity to watch Cat Swetel&#8217;s presentation <em><a href="https://www.youtube.com/watch?v=cW3yM-K2M08">The Development Metrics You Should Use (but Don’t)</a></em>. The information that could be gleaned from just tracking the start and finish date of work items was eye opening. If you&#8217;re using an issue tracker this information is probably already (perhaps with some light data munging) available &#8212; no need for TPS reports. Additionally, statistics obtained by data mining your project&#8217;s issue tracker are, perhaps, less likely to be juked.</p>
+
+
+
+<p>Around the time I saw Cat&#8217;s presentation I finished reading Andy Grove&#8217;s <em>High Output Management</em>. The hidden gem in this book (assuming becoming a meeting powerhouse isn&#8217;t your bag) was Grove&#8217;s notion of indicator pairs. An example of a paired indicator might be the number of sales deals closed paired with the customer retention rate. The underling principle being optimising for one indicator will have an adverse impact on the other. In the example, overly aggressive or deceptive tactics could superficially raise the number of sales made, but would be reflected in a dip in the retention rate as customers returned the product or terminated their service prematurely.</p>
+
+
+
+<p>These ideas lead me to thinking about indicators you could use for a team delivering a software product. Could those indicators be derived cheaply from the hand to hand combat of software delivery? Could they be structured in a way that aggressively pursuing one metric would be reflected negatively in another? I think so.</p>
+
+
+
+<p>These are the three metrics that I&#8217;ve been using to track the health of the project that I lead.</p>
+
+
+
+<ul><li>Date; was the software done when we said it would be done. If you prefer this indicator as a scalar, how many days difference is there between the ship date agreed on at the start of the sprint/milestone/whatever and what was the actual date that you considered it done.</li><li>Completeness; when the software is done, how many of the things we said we&#8217;re going to do actually got delivered in that release.</li><li>Defects reported; once the software is in the field, what is the rate of bugs reported.</li></ul>
+
+
+
+<p>It is relatively easy, for example, to hit a delivery date if you aggressively descope anything risky or simply don&#8217;t do it. But in doing so this lack of promised functionality would impact the completeness metric.</p>
+
+
+
+<p>Conversely, it&#8217;s straight forward to hit your milestone&#8217;s completeness target if you let the release date slip and slip. Bringing both the metics into line requires good estimation skills to judge how much can be attempted in milestone and provide direct feedback if your estimation skills needed work.</p>
+
+
+
+<p>The third indicator, defects reported in the field, acts as a check on the other two. It would be easy to consistent hit your delivery date with 100% feature completion if your team does a shoddy job. The high fives and :tada: emojis will be short lived if each release brings with it a swathe of high priority bug reports. This indicator also tends to have a second order effect, rushed features to meet a deadline tend to generate remedial work in the following milestones, crowding out promised work or blowing later deadlines.</p>
+
+
+
+<p>I consider these to be complementary metrics, they should be considered together, as a group, rather than individually. Ideally your team should be delivering what you promised, when you promised it, with a low defect rate. But more importantly, if that isn&#8217;t the case, if one of the indicators is unhealthy, addressing it shouldn&#8217;t result in the problem moving to another.</p>

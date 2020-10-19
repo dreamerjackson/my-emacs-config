@@ -1,0 +1,26 @@
+
+<p>In the beginning, before the <code>go</code> tool, before Go 1.0, the Go distribution stored the standard library in a subdirectory called <code>pkg/</code> and the commands which built upon it in <code>cmd/</code>. This wasn&#8217;t so much a deliberate taxonomy but a by product of the original <code>make</code> based build system. In <a href="https://groups.google.com/forum/m/#!msg/golang-dev/c5AknZg3Kww/OFLmvGyfNR0J">September 2014</a>, the Go distribution dropped the <code>pkg/</code> subdirectory, but then this tribal knowledge had set root in large Go projects and continues to this day.</p>
+
+
+
+<p>I tend to view empty directories inside a Go project with suspicion. Often they are a hint that the module&#8217;s author may be trying to create a taxonomy of packages rather than ensuring each package&#8217;s name, and thus its enclosing directory, <a href="https://dave.cheney.net/2019/01/08/avoid-package-names-like-base-util-or-common">uniquely describes its purpose</a>. While the symmetry with <code>cmd/</code> for <code>package main</code> commands is appealing, a directory that exists only to hold other packages is a potential design smell.</p>
+
+
+
+<p>More importantly, the boilerplate of an empty <code>pkg/</code> directory distracts from the more useful idiom of an <code>internal/</code> directory. <code>internal/</code> is a special directory name recognised by the <code>go</code> tool which will prevent one package from being imported by another unless both share a common ancestor. Packages within an <code>internal/</code> directory are therefore said to be <em>internal packages</em>.</p>
+
+
+
+<p>To create an internal package, place it within a directory named <code>internal/</code>. When the <code>go</code> command sees an import of a package with <code>internal/</code> in the import path, it verifies that the importing package is within the tree rooted at the <em>parent</em> of the <code>internal/</code> directory.</p>
+
+
+
+<p>For example, a package <code>/a/b/c/internal/d/e/f</code> can only be imported by code in the directory tree rooted at <code>/a/b/c</code>. It cannot be imported by code in <code>/a/b/g</code> or in any other repository. </p>
+
+
+
+<p>If your project contains multiple packages you may find you have some exported symbols which are intended to be used by other packages in your project, but are not intended to be part of your project’s public API. Although Go has limited visibility modifiers&#8211;public, exported, symbols and private, non exported, symbols&#8211;internal packages provide a useful mechanism for controlling visibility to parts of your project which would otherwise be considered part of its public versioned API.</p>
+
+
+
+<p>You can, of course, promote internal packages later if you want to commit to supporting that API; just move them up a directory level or two. The key is this process is <em>opt-in</em>. As the author, internal packages give you control over which symbols in your project&#8217;s public API without being forced to glob concepts together into unwieldy mega packages to avoid exporting them.</p>
