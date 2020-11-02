@@ -5,6 +5,7 @@
                    go-mode rust-mode) . smartparens-mode))
 
 (use-package lsp-mode
+  :ensure t
   :hook ((go-mode . lsp-deferred)
          (rust-mode . lsp-deferred)
          (python-mode . lsp-deferred)
@@ -24,6 +25,7 @@
               ("M-n" . lsp-find-references)))
 
 (use-package lsp-ui
+  :ensure t
   :commands lsp-ui-mode
   :config
   (setq lsp-ui-doc-position 'top
@@ -35,9 +37,9 @@
               ("C-c l" . lsp-ui-imenu))
   )
 
-(use-package company-lsp
-  :commands company-lsp
-  :config
-  (add-hook 'lsp-mode-hook (lambda ()
-                             (push 'company-lsp company-backends))))
+;; (use-package company-lsp
+;;   :commands company-lsp
+;;   :config
+;;   (add-hook 'lsp-mode-hook (lambda ()
+;;                              (push 'company-lsp company-backends))))
 
