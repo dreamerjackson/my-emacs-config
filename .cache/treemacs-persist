@@ -5,11 +5,13 @@
  - path :: ~/Downloads/s.6.828/xv6-riscv-fall19
 ** go-project
  - path :: ~/Downloads/go-project
-** viper
- - path :: ~/go/src/gitlab.sz.sensetime.com/viper
 ** 商汤科技办公
  - path :: ~/Downloads/商汤科技办公
 ** theWayToGolang
  - path :: ~/go/src/theWayToGolang
 ** _posts
  - path :: ~/Downloads/整理资料/hexo-blog/hexo-test/source/_posts
+** gitlab.sz.sensetime.com
+ - path :: ~/go/src/gitlab.sz.sensetime.com
+** career
+ - path :: ~/career

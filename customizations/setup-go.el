@@ -47,19 +47,19 @@
   :config
   (setq go-test-verbose t))
 
-(use-package go-playground
-  :config
-  (setq go-playground-basedir "~/code/go/src/playground")
-  (defun my/go-playground-hook ()
-    (my/global-map-and-set-key "C-R" 'go-playground-exec))
+;; (use-package go-playground
+;;   :config
+;;   (setq go-playground-basedir "~/code/go/src/playground")
+;;   (defun my/go-playground-hook ()
+;;     (my/global-map-and-set-key "C-R" 'go-playground-exec))
   
-  (add-hook 'go-playground-mode-hook 'my/go-playground-hook)
-  )
+;;   (add-hook 'go-playground-mode-hook 'my/go-playground-hook)
+;;   )
 
-(use-package go-rename
-  :after go-mode
-  :ensure-system-package (gorename . "go get -u golang.org/x/tools/cmd/gorename")
-  :bind (:map go-mode-map
-              ("C-c C-r" . go-rename)))
+;; (use-package go-rename
+;;   :after go-mode
+;;   :ensure-system-package (gorename . "go get -u golang.org/x/tools/cmd/gorename")
+;;   :bind (:map go-mode-map
+;;               ("C-c C-r" . go-rename)))
 
 ;; https://github.com/abrochard/emacs-config/blob/master/configuration.org#go

@@ -33,19 +33,20 @@
 
 
 ;; meta key map to alt
-(setq mac-option-modifier 'meta)
-(setq mac-command-modifier 'hyper)
+;;(setq mac-option-modifier 'meta)
+;(setq mac-command-modifier 'hyper)
 
 ;; Keybonds
-(global-set-key [(hyper a)] 'mark-whole-buffer)
-(global-set-key [(hyper v)] 'yank)
-(global-set-key [(hyper c)] 'kill-ring-save)
-(global-set-key [(hyper s)] 'save-buffer)
-(global-set-key [(hyper l)] 'goto-line)
-(global-set-key [(hyper w)]
-                  (lambda () (interactive) (delete-window)))
-(global-set-key [(hyper z)] 'undo)
-(global-set-key [(hyper q)] 'save-buffers-kill-emacs)
+
+;; (global-set-key [(hyper a)] 'mark-whole-buffer)
+;; (global-set-key [(hyper v)] 'yank)
+;; (global-set-key [(hyper c)] 'kill-ring-save)
+;; (global-set-key [(hyper s)] 'save-buffer)
+;; (global-set-key [(hyper l)] 'goto-line)
+;; (global-set-key [(hyper w)]
+;;                   (lambda () (interactive) (delete-window)))
+;; (global-set-key [(hyper z)] 'undo)
+;; (global-set-key [(hyper q)] 'save-buffers-kill-emacs)
 
 
 ;; Lisp-friendly hippie expand
@@ -58,14 +59,14 @@
 
 ;; Interactive search key bindings. By default, C-s runs
 ;; isearch-forward, so this swaps the bindings.
-(global-set-key (kbd "C-s") 'isearch-forward-regexp)
-(global-set-key (kbd "C-r") 'isearch-backward-regexp)
-(global-set-key (kbd "C-M-s") 'isearch-forward)
-(global-set-key (kbd "C-M-r") 'isearch-backward)
-(global-set-key (kbd "C-+") 'text-scale-increase)
-(global-set-key (kbd "C--") 'text-scale-decrease)
-(global-set-key (kbd "C-0") 'text-scale-adjust)
-(global-set-key (kbd "<M-left>") 'org-metaleft)
+;; (global-set-key (kbd "C-s") 'isearch-forward-regexp)
+;; (global-set-key (kbd "C-r") 'isearch-backward-regexp)
+;; (global-set-key (kbd "C-M-s") 'isearch-forward)
+;; (global-set-key (kbd "C-M-r") 'isearch-backward)
+;; (global-set-key (kbd "C-+") 'text-scale-increase)
+;; (global-set-key (kbd "C--") 'text-scale-decrease)
+;; (global-set-key (kbd "C-0") 'text-scale-adjust)
+ (global-set-key (kbd "<M-left>") 'org-metaleft)
 
 (electric-indent-mode)
 (setq kill-do-not-save-duplicates t)
@@ -431,5 +432,5 @@ PREFIX or SUFFIX can wrap the key when passing to `global-set-key'."
   (next-line 1)
   (yank)
 )
-(global-set-key (kbd "C-d") 'duplicate-line)
+(global-set-key (kbd "C-c d") 'duplicate-line)
 ;;; editing.el ends here

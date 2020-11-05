@@ -1,13 +1,32 @@
+;; (use-package smartparens
+;;   :config (require 'smartparens-config)
+;;   :hook ((c++-mode c-mode python-mode
+;;                    ruby-mode js2-mode tuareg-mode
+;;                    go-mode rust-mode) . smartparens-mode))
+
 (use-package smartparens
   :config (require 'smartparens-config)
-  :hook ((c++-mode c-mode python-mode
-                   ruby-mode js2-mode tuareg-mode
-                   go-mode rust-mode) . smartparens-mode))
+  :hook ((go-mode) . smartparens-mode)
+  :config (progn (show-smartparens-global-mode t))
+    :bind (:map smartparens-mode-map
+              ("C-c k" . sp-beginning-of-sexp)
+              ("C-c l" . sp-end-of-sexp)
+              ;; ("C-c <up>" . sp-up-sexp)
+              ;;("C-c <down>" . sp-down-sexp)
+              ;;("M <up>" . sp-backward-up-sexp)
+              ;;("M <down>" . sp-backward-down-sexp)
+              ;; ("C-c <up>" . sp-backward-up-sexp)
+              ;; ("C-c <down>" . sp-backward-down-sexp)
+               ("C-c b" . sp-backward-sexp)
+               ("C-c f" . sp-forward-sexp)
+               ("M-]" . sp-unwrap-sexp)
+              ))
+(add-hook 'prog-mode-hook 'turn-on-smartparens-strict-mode)
 
 (use-package lsp-mode
   :ensure t
   :hook ((go-mode . lsp-deferred)
-         (rust-mode . lsp-deferred)
+         ;;(rust-mode . lsp-deferred)
          (python-mode . lsp-deferred)
          ;; (sh-mode . lsp-deferred)
          ;; (js2-mode . lsp-deferred)
@@ -16,7 +35,7 @@
   ((gopls . "go get golang.org/x/tools/gopls@latest")
   ;; (rls . "rustup component add rls rust-analysis rust-src")
   ;; (pyls . "pip install 'python-language-server[all]'")
-   (typescript-language-server . "npm install -g typescript-language-server")
+   ;;(typescript-language-server . "npm install -g typescript-language-server")
    ;; (bash-language-server . "npm install -g bash-language-server")
    )
   :commands (lsp lsp-deferred)

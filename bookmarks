@@ -4,9 +4,9 @@
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
 (("org-refile-last-stored"
  (filename . "~/my-note-project/study.org")
- (front-context-string . "** 网络书籍：\n*** TCP")
- (rear-context-string . "网络\n** Wireshark\n")
- (position . 2953))
+ (front-context-string . "** linux\n*** fzf")
+ (rear-context-string . "*** projectile\n\n")
+ (position . 30600))
 ("org-capture-last-stored"
  (filename . "~/my-note-project/i.org")
  (front-context-string . "** TODO ddd\n[202")
