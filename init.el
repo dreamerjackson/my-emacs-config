@@ -7,7 +7,11 @@
                           ("melpa" . "http://elpa.emacs-china.org/melpa/")
                          ("marmalada" . "http://elpa.emacs-china.org/marmalade/")))
 
+(setq ad-redefinition-action 'accept)
 
+;; https://www.reddit.com/r/emacs/comments/3kqt6e/2_easy_little_known_steps_to_speed_up_emacs_start/
+;; for gc to decrease  emacs init time
+(setq gc-cons-threshold 100000000)
 ;; Load and activate emacs packages. Do this first so that the
 ;; packages are loaded before you start trying to modify them.
 ;; This also sets the load path.
@@ -32,7 +36,7 @@
     ;; smex
 
     ;; https://common-lisp.net/project/slime/doc/html/Installation.html#Installation
-    slime
+    ;;slime
 
     markdown-mode
     use-package
@@ -126,7 +130,7 @@
 ;;(load "setup-rust.el")
 ;; settings for all langauage
 (load "setup-common.el")
-;;(org-babel-load-file "~/.emacs.d/customizations/misc.org")
+(org-babel-load-file "~/.emacs.d/customizations/misc.org")
 ;;load
 ;;(load "gtags.el")
 

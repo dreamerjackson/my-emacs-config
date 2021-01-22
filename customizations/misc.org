@@ -5,30 +5,30 @@
 opam install tuareg merlin utop
 #+END_SRC
 #+BEGIN_SRC emacs-lisp
-(let ((opam-share (ignore-errors (car (process-lines "opam" "config" "var" "share")))))
-  (when (and opam-share (file-directory-p opam-share))
-    (add-to-list 'load-path (expand-file-name "emacs/site-lisp" opam-share))
-    (load "tuareg-site-file")
-    ;; (load "merlin")
-    (autoload 'merlin-mode "merlin" nil t nil)
-    (autoload 'utop "utop" "Toplevel for OCaml" t)
-    (autoload 'utop-minor-mode "utop" "Minor mode for utop" t)
-    (add-hook 'tuareg-mode-hook 'merlin-mode t)
-    (setq tuareg-indent-align-with-first-arg t)
-    (setq tuareg-match-patterns-aligned t)
+;; (let ((opam-share (ignore-errors (car (process-lines "opam" "config" "var" "share")))))
+;;   (when (and opam-share (file-directory-p opam-share))
+;;     (add-to-list 'load-path (expand-file-name "emacs/site-lisp" opam-share))
+;;     (load "tuareg-site-file")
+;;     ;; (load "merlin")
+;;     (autoload 'merlin-mode "merlin" nil t nil)
+;;     (autoload 'utop "utop" "Toplevel for OCaml" t)
+;;     (autoload 'utop-minor-mode "utop" "Minor mode for utop" t)
+;;     (add-hook 'tuareg-mode-hook 'merlin-mode t)
+;;     (setq tuareg-indent-align-with-first-arg t)
+;;     (setq tuareg-match-patterns-aligned t)
 
-    (add-hook 'caml-mode-hook 'merlin-mode t)
-    (setq utop-command "opam config exec -- utop -emacs")
-    ;; utop-minor cause merlin docstr didn't showup
-    ;; (add-hook 'tuareg-mode-hook 'utop-minor-mode)
-    ))
+;;     (add-hook 'caml-mode-hook 'merlin-mode t)
+;;     (setq utop-command "opam config exec -- utop -emacs")
+;;     ;; utop-minor cause merlin docstr didn't showup
+;;     ;; (add-hook 'tuareg-mode-hook 'utop-minor-mode)
+;;     ))
 #+END_SRC
 
 *  Others
 #+BEGIN_SRC emacs-lisp
 ;; Changes all yes/no questions to y/n type
-(fset 'yes-or-no-p 'y-or-n-p)
-(setq url-configuration-directory (locate-user-emacs-file "data/url/"))
+;;(fset 'yes-or-no-p 'y-or-n-p)
+;;(setq url-configuration-directory (locate-user-emacs-file "data/url/"))
 ;; shell scripts
 (setq-default sh-basic-offset 2)
 (setq-default sh-indentation 2)
@@ -51,10 +51,10 @@ opam install tuareg merlin utop
   :ensure t
   :bind (("C-x g" . magit-status)))
 
-(use-package git-link
-  :bind (("C-c g l" . git-link)
-         ("C-c g c" . git-link-commit)
-         ("C-c g h" . git-link-homepage)))
+;; (use-package git-link
+;;   :bind (("C-c g l" . git-link)
+;;          ("C-c g c" . git-link-commit)
+;;          ("C-c g h" . git-link-homepage)))
 
 ;; (use-package magithub
 ;;   :after magit
@@ -62,9 +62,9 @@ opam install tuareg merlin utop
 ;;   (magithub-feature-autoinject t)
 ;;   (setq magithub-clone-default-directory "~/codes/git"))
 
-(use-package restclient
-  :load-path "~/.emacs.d/vendor/restclient"
-  :mode ("\\.api\\'" . restclient-mode))
+;; (use-package restclient
+;;   :load-path "~/.emacs.d/vendor/restclient"
+;;   :mode ("\\.api\\'" . restclient-mode))
 
 (use-package protobuf-mode
   :load-path "~/.emacs.d/vendor/protobuf-mode"
@@ -73,10 +73,17 @@ opam install tuareg merlin utop
 
 (use-package vmd-mode
   :load-path  "~/.emacs.d/vendor/vmd-mode"
-  :ensure-system-package (vmd . "npm install -g vmd"))
+  ;;  :ensure-system-package (vmd . "npm install -g vmd")
+)
 
 ;; https://emacs.stackexchange.com/a/32554/16450
 (setq epa-pinentry-mode 'loopback)
 ;; (setq epa-file-encrypt-to "hello@liujiacai.net")
+
+;; ediff highlight
+;; https://stackoverflow.com/questions/13464749/how-can-i-get-ediff-mode-to-stop-highlighting-lines-that-differ-only-by-whitespa
+(setq-default ediff-ignore-similar-regions t)
+(setq ediff-diff-options "-w")
+(setq-default ediff-highlight-all-diffs nil)
 
 #+END_SRC
